@@ -1,7 +1,7 @@
 {
-  "name": "monaco-review",
+  "name": "react-svg-dag",
   "version": "0.0.35",
-  "description": "Code review extension for Monaco",
+  "description": "React simple svg dag",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "prettier": {
@@ -17,9 +17,11 @@
   },
   "author": "James Burrow",
   "license": "MIT",
-  "dependencies": {
+  "peerDependencies": {
     "react": "^17.0.2",
-    "react-dom": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "dependencies": {
     "svg-pan-zoom": "^3.6.1"
   },
   "devDependencies": {

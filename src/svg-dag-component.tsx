@@ -1,31 +1,43 @@
 import * as React from "react";
-import { render } from "react-dom";
 import * as svgPanZoom from "svg-pan-zoom";
 
-type IdType = number;
+export type IdType = number | string;
 
-interface DAGNode {
+export interface DAGNode {
   title?: string;
   id: IdType;
   parent?: IdType;
 }
 
-export const config = {
+export interface Configuration {
+  width: number;
+  height: number;
+  horizontalGap: number;
+  verticalGap: number;
+}
+
+export const defaultConfiguration: Configuration = {
   width: 100,
   height: 50,
   horizontalGap: 25,
   verticalGap: 50,
 };
 
-export const xxx = (dagNodes) => {
+const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
   const r = calculateDepths(dagNodes);
   const nodes: Node[] = [];
   const idToNode: Record<IdType, Node> = {};
 
-  for (const [xdepth, dagnodes] of Object.entries(r.depthToNodes)) {
-    const depth = parseInt(xdepth, 10);
+  for (let depth = r.depth; depth > -1; depth--) {
+    const dagnodes = r.depthToNodes[depth];
 
-    for (const [idx, dagnode] of dagnodes.entries()) {
+    let idx = 0;
+
+    for (const dagnode of dagnodes) {
+      const idxShift = (r.idToLeafCount[dagnode.id] || 1) / 2;
+
+      idx += idxShift;
+
       const n: Node = {
         depth,
         height: config.height,
@@ -38,6 +50,7 @@ export const xxx = (dagNodes) => {
 
       nodes.push(n);
       idToNode[dagnode.id] = n;
+      idx += idxShift;
     }
   }
 
@@ -49,14 +62,16 @@ export const xxx = (dagNodes) => {
   return { nodes, edges };
 };
 
-export const calculateDepths = (nodes: DAGNode[]) => {
+const calculateDepths = (nodes: DAGNode[]) => {
   const idToNode: Record<IdType, DAGNode> = {};
   const idToParent: Record<IdType, IdType> = {};
   const idToDepth: Record<IdType, IdType> = {};
+  const idToLeafCount: Record<IdType, number> = {};
   const idToDepthIndex: Record<IdType, number> = {};
   const depthToNodes: Record<number, DAGNode[]> = {};
   const parentToIds: Record<IdType, IdType[]> = {};
   const edges: [DAGNode, DAGNode][] = [];
+  let maxDepth = 0;
 
   for (const node of nodes) {
     idToNode[node.id] = node;
@@ -79,49 +94,67 @@ export const calculateDepths = (nodes: DAGNode[]) => {
       depthToNodes[depth] = [];
     }
 
+    idToLeafCount[node.id] = 0;
     idToDepth[node.id] = depth;
     depthToNodes[depth].push(node);
     idToDepthIndex[node.id] = depthToNodes[depth].length;
+
+    if (depth > maxDepth) {
+      maxDepth = depth;
+    }
 
     if (node.parent !== null && node.parent !== undefined) {
       edges.push([node, idToNode[node.parent]]);
     }
   }
 
-  const depth = Math.max(...Object.keys(depthToNodes).map(parseInt));
+  for (let depth = maxDepth; depth > -1; depth--) {
+    for (const node of depthToNodes[depth]) {
+      idToLeafCount[node.parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+    }
+  }
 
-  return { parentToIds, idToParent, idToNode, idToDepth, edges, idToDepthIndex, depthToNodes, depth };
+  return {
+    parentToIds,
+    idToParent,
+    idToNode,
+    idToDepth,
+    edges,
+    idToDepthIndex,
+    depthToNodes,
+    depth: maxDepth,
+    idToLeafCount,
+  };
 };
 
-const X = () => {
+export const DAGSVGComponent = (props: {
+  nodes: DAGNode[];
+  configuration?: Configuration;
+  onSVG?(element: any): void;
+  style?: React.CSSProperties;
+}) => {
   const svgRef = React.useRef();
 
   React.useEffect(() => {
     if (svgRef.current) {
-      const xx = svgPanZoom(svgRef.current);
-      xx.zoom(1);
+      if (props.onSVG) {
+        props.onSVG(svgRef.current);
+      }
+
+      const controller = svgPanZoom(svgRef.current);
+      controller.zoom(1);
     }
   }, [svgRef.current]);
 
-  const nodes: DAGNode[] = [{ id: 0 }];
-
-  for (let d = 1; d < 5; d++) {
-    nodes.push({ id: d, parent: 0 });
-    for (let i = 1; i < 5; i++) {
-      nodes.push({ id: d * 100 + i, parent: d });
-    }
-  }
-  //[{ id: 0 }, { id: 1, parent: 0 }, { id: 2, parent: 0 }];
-
-  const y = xxx(nodes);
+  const dag = generateNodesAndEdges(props.nodes, props.configuration || defaultConfiguration);
 
   return (
-    <svg version="1.1" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" ref={svgRef}>
-      <g transform="scale(1)">
-        {y.nodes.map((n) => (
+    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
+      <g>
+        {dag.nodes.map((n) => (
           <NodeComponent node={n} key={n.node.id} />
         ))}
-        {y.edges.map((n) => (
+        {dag.edges.map((n) => (
           <EdgeComponent from={n.from} to={n.to} key={`${n.from.node.id}-${n.to.node.id}`} />
         ))}
       </g>
@@ -139,12 +172,19 @@ interface Node {
   node: DAGNode;
 }
 
-const NodeComponent = (props: { node: Node; key?: number }): React.Element => {
+const NodeComponent = (props: { node: Node; key?: IdType }): React.Element => {
   return (
     <g>
-      <rect width={props.node.width} height={props.node.height} x={props.node.x} y={props.node.y} fill="orange" />
+      <rect
+        width={props.node.width}
+        height={props.node.height}
+        x={props.node.x}
+        y={props.node.y}
+        fill="white"
+        stroke="black"
+      />
       <text x={props.node.x + 50} y={props.node.y + 25} fontSize="10" textAnchor="middle" fill="black">
-        {props.node.node.id.toLocaleString()} xxx
+        {props.node.node.title || props.node.node.id}
       </text>
     </g>
   );
@@ -167,8 +207,4 @@ const EdgeComponent = (props: { from: Node; to: Node; key?: string }) => {
       fill="transparent"
     />
   );
-};
-
-export const doit = () => {
-  render(<X />, document.getElementById("out"));
 };
