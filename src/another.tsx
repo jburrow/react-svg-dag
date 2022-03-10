@@ -88,7 +88,9 @@ export const calculateDepths = (nodes: DAGNode[]) => {
     }
   }
 
-  return { parentToIds, idToParent, idToNode, idToDepth, edges, idToDepthIndex, depthToNodes };
+  const depth = Math.max(...Object.keys(depthToNodes).map(parseInt));
+
+  return { parentToIds, idToParent, idToNode, idToDepth, edges, idToDepthIndex, depthToNodes, depth };
 };
 
 const X = () => {
