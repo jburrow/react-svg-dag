@@ -1,3 +1,3 @@
-import { doit } from "./another";
+import { DAGSVGComponent, IdType, Configuration, DAGNode } from "./svg-dag-component";
 
-doit();
+export { DAGSVGComponent, Configuration, IdType, DAGNode };
