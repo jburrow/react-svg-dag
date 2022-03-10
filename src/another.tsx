@@ -1,6 +1,7 @@
 import { template } from "@babel/core";
 import * as React from "react";
 import { render } from "react-dom";
+import * as svgPanZoom from "svg-pan-zoom";
 
 type IdType = number;
 
@@ -82,18 +83,37 @@ export const calculateDepths = (nodes: DAGNode[]) => {
 };
 
 const X = (props: {}) => {
-  const nodes: DAGNode[] = [{ id: 0 }, { id: 1, parent: 0 }, { id: 2, parent: 0 }];
+  const svgRef = React.useRef();
+
+  React.useEffect(() => {
+    if (svgRef.current) {
+      const xx = svgPanZoom(svgRef.current);
+      xx.zoom(10);
+    }
+  }, [svgRef.current]);
+
+  const nodes: DAGNode[] = [{ id: 0 }];
+
+  for (let d = 1; d < 5; d++) {
+    nodes.push({ id: d, parent: 0 });
+    for (let i = 1; i < 5; i++) {
+      nodes.push({ id: d * 100 + i, parent: d });
+    }
+  }
+  //[{ id: 0 }, { id: 1, parent: 0 }, { id: 2, parent: 0 }];
 
   const y = xxx(nodes);
 
   return (
-    <svg version="1.1" width="800" height="800" xmlns="http://www.w3.org/2000/svg">
-      {y.nodes.map((n) => (
-        <NodeComponent node={n} key={n.node.id} />
-      ))}
-      {y.edges.map((n) => (
-        <EdgeComponent from={n.from} to={n.to} key={`${n.from.node.id}-${n.to.node.id}`} />
-      ))}
+    <svg version="1.1" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" ref={svgRef}>
+      <g transform="scale(1)">
+        {y.nodes.map((n) => (
+          <NodeComponent node={n} key={n.node.id} />
+        ))}
+        {y.edges.map((n) => (
+          <EdgeComponent from={n.from} to={n.to} key={`${n.from.node.id}-${n.to.node.id}`} />
+        ))}
+      </g>
     </svg>
   );
 };
