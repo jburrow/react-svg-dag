@@ -1,4 +1,3 @@
-import { template } from "@babel/core";
 import * as React from "react";
 import { render } from "react-dom";
 import * as svgPanZoom from "svg-pan-zoom";
@@ -11,29 +10,39 @@ interface DAGNode {
   parent?: IdType;
 }
 
+export const config = {
+  width: 100,
+  height: 50,
+  horizontalGap: 25,
+  verticalGap: 50,
+};
+
 export const xxx = (dagNodes) => {
   const r = calculateDepths(dagNodes);
   const nodes: Node[] = [];
   const idToNode: Record<IdType, Node> = {};
 
-  for (let node of dagNodes) {
-    const depth = r.idToDepth[node.id] || 0;
-    const n: Node = {
-      depth,
-      height: 50,
-      width: 100,
-      x: 125 * nodes.length,
-      y: 100 * depth,
-      node,
-      index: r.idToDepthIndex[node.id],
-    };
+  for (const [xdepth, dagnodes] of Object.entries(r.depthToNodes)) {
+    const depth = parseInt(xdepth, 10);
 
-    nodes.push(n);
-    idToNode[node.id] = n;
+    for (const [idx, dagnode] of dagnodes.entries()) {
+      const n: Node = {
+        depth,
+        height: config.height,
+        width: config.width,
+        x: (config.width + config.horizontalGap) * idx,
+        y: (config.height + config.verticalGap) * depth,
+        node: dagnode,
+        index: dagnode.parent !== null ? r.parentToIds[dagnode.parent].indexOf(dagnode.id) : 0,
+      };
+
+      nodes.push(n);
+      idToNode[dagnode.id] = n;
+    }
   }
 
   const edges = [];
-  for (let edge of r.edges) {
+  for (const edge of r.edges) {
     edges.push({ from: idToNode[edge[0].id], to: idToNode[edge[1].id] });
   }
 
@@ -49,7 +58,7 @@ export const calculateDepths = (nodes: DAGNode[]) => {
   const parentToIds: Record<IdType, IdType[]> = {};
   const edges: [DAGNode, DAGNode][] = [];
 
-  for (let node of nodes) {
+  for (const node of nodes) {
     idToNode[node.id] = node;
     idToParent[node.id] = node.parent;
     if (!parentToIds[node.parent]) {
@@ -59,7 +68,7 @@ export const calculateDepths = (nodes: DAGNode[]) => {
     parentToIds[node.parent].push(node.id);
   }
 
-  for (let node of nodes) {
+  for (const node of nodes) {
     let depth = 0;
     let tmp = node;
     while (tmp.parent !== null && tmp.parent !== undefined) {
@@ -79,16 +88,16 @@ export const calculateDepths = (nodes: DAGNode[]) => {
     }
   }
 
-  return { parentToIds, idToParent, idToNode, idToDepth, edges, idToDepthIndex };
+  return { parentToIds, idToParent, idToNode, idToDepth, edges, idToDepthIndex, depthToNodes };
 };
 
-const X = (props: {}) => {
+const X = () => {
   const svgRef = React.useRef();
 
   React.useEffect(() => {
     if (svgRef.current) {
       const xx = svgPanZoom(svgRef.current);
-      xx.zoom(10);
+      xx.zoom(1);
     }
   }, [svgRef.current]);
 
