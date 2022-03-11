@@ -133,8 +133,17 @@ export const DAGSVGComponent = (props: {
   configuration?: Configuration;
   onSVG?(element: any): void;
   style?: React.CSSProperties;
+  renderNode?(node: Node): JSX.Element;
+  renderEdge?(edge: Edge): JSX.Element;
 }) => {
-  const svgRef = React.useRef();
+  const svgRef = React.useRef<SVGSVGElement>();
+
+  const renderNode = props.renderNode
+    ? props.renderNode
+    : (node: Node) => <NodeComponent node={node} key={`${node.node.id}`} />;
+  const renderEdge = props.renderEdge
+    ? props.renderEdge
+    : (edge: Edge) => <EdgeComponent from={edge.from} to={edge.to} key={`${edge.from.node.id}-${edge.to.node.id}`} />;
 
   React.useEffect(() => {
     if (svgRef.current) {
@@ -142,8 +151,8 @@ export const DAGSVGComponent = (props: {
         props.onSVG(svgRef.current);
       }
 
-      const controller = svgPanZoom(svgRef.current);
-      controller.zoom(1);
+      //const controller = svgPanZoom(svgRef.current);
+      //controller.zoom(1);
     }
   }, [svgRef.current]);
 
@@ -152,18 +161,19 @@ export const DAGSVGComponent = (props: {
   return (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
       <g>
-        {dag.nodes.map((n) => (
-          <NodeComponent node={n} key={n.node.id} />
-        ))}
-        {dag.edges.map((n) => (
-          <EdgeComponent from={n.from} to={n.to} key={`${n.from.node.id}-${n.to.node.id}`} />
-        ))}
+        {dag.nodes.map(renderNode)}
+        {dag.edges.map(renderEdge)}
       </g>
     </svg>
   );
 };
 
-interface Node {
+export interface Edge {
+  to: Node;
+  from: Node;
+}
+
+export interface Node {
   x: number;
   y: number;
   width: number;
@@ -173,7 +183,7 @@ interface Node {
   node: DAGNode;
 }
 
-const NodeComponent = (props: { node: Node; key?: IdType }): React.Element => {
+export const NodeComponent = (props: { node: Node; key?: IdType }): JSX.Element => {
   return (
     <g>
       <rect
@@ -191,7 +201,7 @@ const NodeComponent = (props: { node: Node; key?: IdType }): React.Element => {
   );
 };
 
-const EdgeComponent = (props: { from: Node; to: Node; key?: string }) => {
+export const EdgeComponent = (props: { from: Node; to: Node; key?: string }): JSX.Element => {
   const isAbove = props.from.y > props.to.y;
   const from_x = props.from.x + props.from.width / 2;
   const from_y = props.from.y + (isAbove ? 0 : props.from.height);

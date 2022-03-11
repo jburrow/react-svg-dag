@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DAGSVGComponent = exports.defaultConfiguration = void 0;
+exports.EdgeComponent = exports.NodeComponent = exports.DAGSVGComponent = exports.defaultConfiguration = void 0;
 const React = require("react");
-const svgPanZoom = require("svg-pan-zoom");
 exports.defaultConfiguration = {
     width: 100,
     height: 50,
@@ -99,20 +98,26 @@ const calculateDepths = (nodes) => {
 };
 const DAGSVGComponent = (props) => {
     const svgRef = React.useRef();
+    const renderNode = props.renderNode
+        ? props.renderNode
+        : (node) => React.createElement(exports.NodeComponent, { node: node, key: `${node.node.id}` });
+    const renderEdge = props.renderEdge
+        ? props.renderEdge
+        : (edge) => React.createElement(exports.EdgeComponent, { from: edge.from, to: edge.to, key: `${edge.from.node.id}-${edge.to.node.id}` });
     React.useEffect(() => {
         if (svgRef.current) {
             if (props.onSVG) {
                 props.onSVG(svgRef.current);
             }
-            const controller = svgPanZoom(svgRef.current);
-            controller.zoom(1);
+            //const controller = svgPanZoom(svgRef.current);
+            //controller.zoom(1);
         }
     }, [svgRef.current]);
     const dag = generateNodesAndEdges(props.nodes, props.configuration || exports.defaultConfiguration);
     return (React.createElement("svg", { version: "1.1", xmlns: "http://www.w3.org/2000/svg", ref: svgRef, style: props.style || {} },
         React.createElement("g", null,
-            dag.nodes.map((n) => (React.createElement(NodeComponent, { node: n, key: n.node.id }))),
-            dag.edges.map((n) => (React.createElement(EdgeComponent, { from: n.from, to: n.to, key: `${n.from.node.id}-${n.to.node.id}` }))))));
+            dag.nodes.map(renderNode),
+            dag.edges.map(renderEdge))));
 };
 exports.DAGSVGComponent = DAGSVGComponent;
 const NodeComponent = (props) => {
@@ -120,6 +125,7 @@ const NodeComponent = (props) => {
         React.createElement("rect", { width: props.node.width, height: props.node.height, x: props.node.x, y: props.node.y, fill: "white", stroke: "black" }),
         React.createElement("text", { x: props.node.x + 50, y: props.node.y + 25, fontSize: "10", textAnchor: "middle", fill: "black" }, props.node.node.title || props.node.node.id)));
 };
+exports.NodeComponent = NodeComponent;
 const EdgeComponent = (props) => {
     const isAbove = props.from.y > props.to.y;
     const from_x = props.from.x + props.from.width / 2;
@@ -129,4 +135,5 @@ const EdgeComponent = (props) => {
     const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * 5;
     return (React.createElement("path", { d: `M ${from_x} ${from_y} V ${from_y - mid_y}  H ${to_x} L ${to_x} ${to_y}`, stroke: "black", fill: "transparent" }));
 };
+exports.EdgeComponent = EdgeComponent;
 //# sourceMappingURL=svg-dag-component.js.map
