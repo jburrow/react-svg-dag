@@ -20,17 +20,13 @@
   "dependencies": {
     "svg-pan-zoom": "^3.6.1"
   },
-  "peerDependencies": {
-    "react": "^16.14.0",
-    "react-dom": "^16.14.0"
-  },
   "devDependencies": {
     "@babel/preset-env": "^7.16.11",
     "@babel/preset-react": "^7.16.7",
     "babel-jest": "^27.5.1",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
-    "react-test-renderer": "^17.0.2",
+    "react-test-renderer": "^16.14.0",
     "@babel/runtime": "^7.17.0",
     "@babel/types": "^7.17.0",
     "@types/jest": "^27.4.0",
