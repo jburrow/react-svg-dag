@@ -83,6 +83,9 @@ const calculateDepths = (nodes) => {
             for (const node of depthToNodes[depth]) {
                 idToLeafCount[node.parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
             }
+            if (depth > 0) {
+                depthToNodes[depth].sort((a, b) => a.parent - b.parent || a.id - b.id);
+            }
         }
     }
     return {

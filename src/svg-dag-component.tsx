@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as svgPanZoom from "svg-pan-zoom";
 
-export type IdType = number | string;
+export type IdType = number;
 
 export interface DAGNode {
   title?: string;
@@ -112,6 +112,10 @@ const calculateDepths = (nodes: DAGNode[]) => {
       for (const node of depthToNodes[depth]) {
         idToLeafCount[node.parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
       }
+
+      if (depth > 0) {
+        depthToNodes[depth].sort((a, b) => a.parent - b.parent || a.id - b.id);
+      }
     }
   }
 
@@ -183,7 +187,7 @@ export interface Node {
   node: DAGNode;
 }
 
-export const NodeComponent = (props: { node: Node; key?: IdType }): JSX.Element => {
+export const NodeComponent = (props: { node: Node; key?: string }): JSX.Element => {
   return (
     <g>
       <rect

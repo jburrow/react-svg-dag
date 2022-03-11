@@ -1,5 +1,5 @@
 import * as React from "react";
-export declare type IdType = number | string;
+export declare type IdType = number;
 export interface DAGNode {
     title?: string;
     id: IdType;
@@ -35,7 +35,7 @@ export interface Node {
 }
 export declare const NodeComponent: (props: {
     node: Node;
-    key?: IdType;
+    key?: string;
 }) => JSX.Element;
 export declare const EdgeComponent: (props: {
     from: Node;

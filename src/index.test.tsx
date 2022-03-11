@@ -8,7 +8,9 @@ import * as React from "react";
 
 import { create } from "react-test-renderer";
 
-test("<DAGSVGComponent />", () => {
+test("<DAGSVGComponent /> no nodes", () => {
   const component = create(<DAGSVGComponent nodes={[]} />);
-  expect(1).toBe(1);
+});
+test("<DAGSVGComponent /> one node", () => {
+  const component = create(<DAGSVGComponent nodes={[{ id: 1 }, { id: 2, parent: 1 }]} />);
 });
