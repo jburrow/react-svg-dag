@@ -14,7 +14,7 @@ const generateNodesAndEdges = (dagNodes, config) => {
     const nodes = [];
     const idToNode = {};
     for (let depth = r.depth; depth > -1; depth--) {
-        const dagnodes = r.depthToNodes[depth];
+        const dagnodes = r.depthToNodes[depth] || [];
         let idx = 0;
         for (const dagnode of dagnodes) {
             const idxShift = (r.idToLeafCount[dagnode.id] || 1) / 2;
@@ -78,9 +78,11 @@ const calculateDepths = (nodes) => {
             edges.push([node, idToNode[node.parent]]);
         }
     }
-    for (let depth = maxDepth; depth > -1; depth--) {
-        for (const node of depthToNodes[depth]) {
-            idToLeafCount[node.parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+    if (nodes.length) {
+        for (let depth = maxDepth; depth > -1; depth--) {
+            for (const node of depthToNodes[depth]) {
+                idToLeafCount[node.parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+            }
         }
     }
     return {
