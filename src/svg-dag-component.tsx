@@ -151,7 +151,7 @@ export const DAGSVGComponent = (props: {
         props.onSVG(svgRef.current);
       }
 
-      //const controller = svgPanZoom(svgRef.current);
+      const controller = svgPanZoom(svgRef.current);
       //controller.zoom(1);
     }
   }, [svgRef.current]);
@@ -194,7 +194,13 @@ export const NodeComponent = (props: { node: Node; key?: IdType }): JSX.Element 
         fill="white"
         stroke="black"
       />
-      <text x={props.node.x + 50} y={props.node.y + 25} fontSize="10" textAnchor="middle" fill="black">
+      <text
+        x={props.node.x + props.node.width / 2}
+        y={props.node.y + props.node.height / 2}
+        fontSize="10"
+        textAnchor="middle"
+        fill="black"
+      >
         {props.node.node.title || props.node.node.id}
       </text>
     </g>

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EdgeComponent = exports.NodeComponent = exports.DAGSVGComponent = exports.defaultConfiguration = void 0;
 const React = require("react");
+const svgPanZoom = require("svg-pan-zoom");
 exports.defaultConfiguration = {
     width: 100,
     height: 50,
@@ -109,7 +110,7 @@ const DAGSVGComponent = (props) => {
             if (props.onSVG) {
                 props.onSVG(svgRef.current);
             }
-            //const controller = svgPanZoom(svgRef.current);
+            const controller = svgPanZoom(svgRef.current);
             //controller.zoom(1);
         }
     }, [svgRef.current]);
@@ -123,7 +124,7 @@ exports.DAGSVGComponent = DAGSVGComponent;
 const NodeComponent = (props) => {
     return (React.createElement("g", null,
         React.createElement("rect", { width: props.node.width, height: props.node.height, x: props.node.x, y: props.node.y, fill: "white", stroke: "black" }),
-        React.createElement("text", { x: props.node.x + 50, y: props.node.y + 25, fontSize: "10", textAnchor: "middle", fill: "black" }, props.node.node.title || props.node.node.id)));
+        React.createElement("text", { x: props.node.x + props.node.width / 2, y: props.node.y + props.node.height / 2, fontSize: "10", textAnchor: "middle", fill: "black" }, props.node.node.title || props.node.node.id)));
 };
 exports.NodeComponent = NodeComponent;
 const EdgeComponent = (props) => {
