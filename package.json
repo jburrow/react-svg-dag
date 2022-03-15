@@ -1,6 +1,6 @@
 {
   "name": "react-svg-dag",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "React simple svg dag",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "webpack serve",
-    "compile": "tsc && webpack --mode=production",
+    "compile": "tsc && webpack --mode=production && typedoc --out ./docs ./src/index.ts",
     "tsc": "tsc --watch",
     "doc": "typedoc --out ./docs ./src/index.ts",
     "test": "jest --coverage"

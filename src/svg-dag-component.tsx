@@ -14,6 +14,8 @@ export interface Configuration {
   height: number;
   horizontalGap: number;
   verticalGap: number;
+  enablePanZoom: boolean;
+  edgePadding: number;
 }
 
 export const defaultConfiguration: Configuration = {
@@ -21,6 +23,8 @@ export const defaultConfiguration: Configuration = {
   height: 50,
   horizontalGap: 25,
   verticalGap: 50,
+  enablePanZoom: true,
+  edgePadding: 3,
 };
 
 const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
@@ -136,10 +140,12 @@ export const DAGSVGComponent = (props: {
   nodes: DAGNode[];
   configuration?: Configuration;
   onSVG?(element: any): void;
+  onPanZoomInit?(controller: SvgPanZoom.Instance): void;
   style?: React.CSSProperties;
   renderNode?(node: Node): JSX.Element;
   renderEdge?(edge: Edge): JSX.Element;
 }) => {
+  const configuration = props.configuration || defaultConfiguration;
   const svgRef = React.useRef<SVGSVGElement>();
 
   const renderNode = props.renderNode
@@ -147,7 +153,14 @@ export const DAGSVGComponent = (props: {
     : (node: Node) => <NodeComponent node={node} key={`${node.node.id}`} />;
   const renderEdge = props.renderEdge
     ? props.renderEdge
-    : (edge: Edge) => <EdgeComponent from={edge.from} to={edge.to} key={`${edge.from.node.id}-${edge.to.node.id}`} />;
+    : (edge: Edge) => (
+        <EdgeComponent
+          from={edge.from}
+          to={edge.to}
+          key={`${edge.from.node.id}-${edge.to.node.id}`}
+          configuration={configuration}
+        />
+      );
 
   React.useEffect(() => {
     if (svgRef.current) {
@@ -155,12 +168,19 @@ export const DAGSVGComponent = (props: {
         props.onSVG(svgRef.current);
       }
 
-      const controller = svgPanZoom(svgRef.current);
-      //controller.zoom(1);
+      if (configuration.enablePanZoom) {
+        const controller = svgPanZoom(svgRef.current);
+        controller.setMinZoom(0.25);
+        controller.setMaxZoom(2.5);
+        controller.setZoomScaleSensitivity(1.5);
+        if (props.onPanZoomInit) {
+          props.onPanZoomInit(controller);
+        }
+      }
     }
   }, [svgRef.current]);
 
-  const dag = generateNodesAndEdges(props.nodes, props.configuration || defaultConfiguration);
+  const dag = generateNodesAndEdges(props.nodes, configuration);
 
   return (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
@@ -211,7 +231,12 @@ export const NodeComponent = (props: { node: Node; key?: string }): JSX.Element 
   );
 };
 
-export const EdgeComponent = (props: { from: Node; to: Node; key?: string }): JSX.Element => {
+export const EdgeComponent = (props: {
+  from: Node;
+  to: Node;
+  key?: string;
+  configuration: Configuration;
+}): JSX.Element => {
   const isAbove = props.from.y > props.to.y;
   const from_x = props.from.x + props.from.width / 2;
   const from_y = props.from.y + (isAbove ? 0 : props.from.height);
@@ -219,7 +244,7 @@ export const EdgeComponent = (props: { from: Node; to: Node; key?: string }): JS
   const to_x = props.to.x + props.to.width / 2;
   const to_y = props.to.y + (isAbove ? props.to.height : 0);
 
-  const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * 5;
+  const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * props.configuration.edgePadding;
 
   return (
     <path

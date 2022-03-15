@@ -1,33 +1,11 @@
 import { DAGSVGComponent, DAGNode, Node } from "./index";
 import { render } from "react-dom";
 import * as React from "react";
-
-function getRandomInt(min, max) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
+import { randomNodes } from "./example-nodes";
 
 export const renderExample = () => {
-  const nodes: DAGNode[] = [{ id: 0 }];
-
-  const r = getRandomInt(2, 5);
-  for (let d = 1; d < r; d++) {
-    const l1id = d;
-    nodes.push({ id: l1id, parent: 0 });
-
-    const r2 = getRandomInt(2, 5);
-    for (let i = 0; i < r2; i++) {
-      const l2id = l1id * 10 + i;
-
-      nodes.push({ id: l2id, parent: l1id });
-      const r3 = getRandomInt(0, 3);
-      for (let y = 0; y < r3; y++) {
-        const l3id = l2id * 10 + y;
-
-        nodes.push({ id: l3id, parent: l2id });
-      }
-    }
-  }
+  const nodes = randomNodes();
+  //const nodes = example001;
   render(
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "row" }}>
       <pre style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>{JSON.stringify(nodes, null, 2)}</pre>
@@ -35,8 +13,14 @@ export const renderExample = () => {
         <DAGSVGComponent nodes={nodes} style={{ height: "500px", width: "100%" }} />
         <DAGSVGComponent
           nodes={nodes}
-          style={{ height: "500px", width: "100%" }}
+          style={{ height: "1024px", width: "100%" }}
           renderNode={(node: Node) => <NodeComponent node={node} key={`${node.node.id}`} />}
+          onPanZoomInit={(c) => {
+            console.log("[onPanZoomInit]", c);
+          }}
+          onSVG={(s) => {
+            console.log("[onSVG]", s);
+          }}
         />
       </div>
     </div>,

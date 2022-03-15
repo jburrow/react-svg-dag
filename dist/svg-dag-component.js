@@ -8,6 +8,8 @@ exports.defaultConfiguration = {
     height: 50,
     horizontalGap: 25,
     verticalGap: 50,
+    enablePanZoom: true,
+    edgePadding: 3,
 };
 const generateNodesAndEdges = (dagNodes, config) => {
     const r = calculateDepths(dagNodes);
@@ -101,23 +103,31 @@ const calculateDepths = (nodes) => {
     };
 };
 const DAGSVGComponent = (props) => {
+    const configuration = props.configuration || exports.defaultConfiguration;
     const svgRef = React.useRef();
     const renderNode = props.renderNode
         ? props.renderNode
         : (node) => React.createElement(exports.NodeComponent, { node: node, key: `${node.node.id}` });
     const renderEdge = props.renderEdge
         ? props.renderEdge
-        : (edge) => React.createElement(exports.EdgeComponent, { from: edge.from, to: edge.to, key: `${edge.from.node.id}-${edge.to.node.id}` });
+        : (edge) => (React.createElement(exports.EdgeComponent, { from: edge.from, to: edge.to, key: `${edge.from.node.id}-${edge.to.node.id}`, configuration: configuration }));
     React.useEffect(() => {
         if (svgRef.current) {
             if (props.onSVG) {
                 props.onSVG(svgRef.current);
             }
-            const controller = svgPanZoom(svgRef.current);
-            //controller.zoom(1);
+            if (configuration.enablePanZoom) {
+                const controller = svgPanZoom(svgRef.current);
+                controller.setMinZoom(0.25);
+                controller.setMaxZoom(2.5);
+                controller.setZoomScaleSensitivity(1.5);
+                if (props.onPanZoomInit) {
+                    props.onPanZoomInit(controller);
+                }
+            }
         }
     }, [svgRef.current]);
-    const dag = generateNodesAndEdges(props.nodes, props.configuration || exports.defaultConfiguration);
+    const dag = generateNodesAndEdges(props.nodes, configuration);
     return (React.createElement("svg", { version: "1.1", xmlns: "http://www.w3.org/2000/svg", ref: svgRef, style: props.style || {} },
         React.createElement("g", null,
             dag.nodes.map(renderNode),
@@ -136,7 +146,7 @@ const EdgeComponent = (props) => {
     const from_y = props.from.y + (isAbove ? 0 : props.from.height);
     const to_x = props.to.x + props.to.width / 2;
     const to_y = props.to.y + (isAbove ? props.to.height : 0);
-    const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * 5;
+    const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * props.configuration.edgePadding;
     return (React.createElement("path", { d: `M ${from_x} ${from_y} V ${from_y - mid_y}  H ${to_x} L ${to_x} ${to_y}`, stroke: "black", fill: "transparent" }));
 };
 exports.EdgeComponent = EdgeComponent;

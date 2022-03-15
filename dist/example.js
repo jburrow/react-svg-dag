@@ -4,32 +4,19 @@ exports.renderExample = void 0;
 const index_1 = require("./index");
 const react_dom_1 = require("react-dom");
 const React = require("react");
-function getRandomInt(min, max) {
-    // min and max included
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}
+const example_nodes_1 = require("./example-nodes");
 const renderExample = () => {
-    const nodes = [{ id: 0 }];
-    const r = getRandomInt(2, 5);
-    for (let d = 1; d < r; d++) {
-        const l1id = d;
-        nodes.push({ id: l1id, parent: 0 });
-        const r2 = getRandomInt(2, 5);
-        for (let i = 0; i < r2; i++) {
-            const l2id = l1id * 10 + i;
-            nodes.push({ id: l2id, parent: l1id });
-            const r3 = getRandomInt(0, 3);
-            for (let y = 0; y < r3; y++) {
-                const l3id = l2id * 10 + y;
-                nodes.push({ id: l3id, parent: l2id });
-            }
-        }
-    }
+    const nodes = (0, example_nodes_1.randomNodes)();
+    //const nodes = example001;
     (0, react_dom_1.render)(React.createElement("div", { style: { height: "100%", width: "100%", display: "flex", flexDirection: "row" } },
         React.createElement("pre", { style: { lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" } }, JSON.stringify(nodes, null, 2)),
         React.createElement("div", { style: { display: "flex", flexDirection: "column", height: "100%", width: "100%" } },
             React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "500px", width: "100%" } }),
-            React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "500px", width: "100%" }, renderNode: (node) => React.createElement(NodeComponent, { node: node, key: `${node.node.id}` }) }))), document.getElementById("out"));
+            React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "1024px", width: "100%" }, renderNode: (node) => React.createElement(NodeComponent, { node: node, key: `${node.node.id}` }), onPanZoomInit: (c) => {
+                    console.log("[onPanZoomInit]", c);
+                }, onSVG: (s) => {
+                    console.log("[onSVG]", s);
+                } }))), document.getElementById("out"));
 };
 exports.renderExample = renderExample;
 const NodeComponent = (props) => {

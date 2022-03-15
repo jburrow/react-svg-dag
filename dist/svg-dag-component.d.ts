@@ -10,12 +10,15 @@ export interface Configuration {
     height: number;
     horizontalGap: number;
     verticalGap: number;
+    enablePanZoom: boolean;
+    edgePadding: number;
 }
 export declare const defaultConfiguration: Configuration;
 export declare const DAGSVGComponent: (props: {
     nodes: DAGNode[];
     configuration?: Configuration;
     onSVG?(element: any): void;
+    onPanZoomInit?(controller: SvgPanZoom.Instance): void;
     style?: React.CSSProperties;
     renderNode?(node: Node): JSX.Element;
     renderEdge?(edge: Edge): JSX.Element;
@@ -41,4 +44,5 @@ export declare const EdgeComponent: (props: {
     from: Node;
     to: Node;
     key?: string;
+    configuration: Configuration;
 }) => JSX.Element;
