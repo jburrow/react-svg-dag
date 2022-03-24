@@ -1,11 +1,11 @@
 import { DAGSVGComponent, DAGNode, Node } from "./index";
 import { render } from "react-dom";
 import * as React from "react";
-import { randomNodes } from "./example-nodes";
+import { randomNodes, exampleDiamond } from "./example-nodes";
 
 export const renderExample = () => {
-  const nodes = randomNodes();
-  //const nodes = example001;
+  //const nodes = randomNodes();
+  const nodes = exampleDiamond;
   render(
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "row" }}>
       <pre style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>{JSON.stringify(nodes, null, 2)}</pre>
@@ -29,7 +29,7 @@ export const renderExample = () => {
 };
 
 const NodeComponent = (props: { node: Node; key: string }) => {
-  const colors = ["red", "orange", "green", "cyan", "pick", "silver", "gold"];
+  const colors = ["red", "orange", "green", "cyan", "pink", "silver", "gold"];
 
   return (
     <g>

@@ -1,3 +1,4 @@
+import { COMPARISON_BINARY_OPERATORS } from "@babel/types";
 import * as React from "react";
 import * as svgPanZoom from "svg-pan-zoom";
 
@@ -6,7 +7,7 @@ export type IdType = number;
 export interface DAGNode {
   title?: string;
   id: IdType;
-  parent?: IdType;
+  parents?: IdType[];
 }
 
 export interface Configuration {
@@ -16,6 +17,7 @@ export interface Configuration {
   verticalGap: number;
   enablePanZoom: boolean;
   edgePadding: number;
+  panZoomOptions?: SvgPanZoom.Options;
 }
 
 export const defaultConfiguration: Configuration = {
@@ -25,6 +27,13 @@ export const defaultConfiguration: Configuration = {
   verticalGap: 50,
   enablePanZoom: true,
   edgePadding: 3,
+  panZoomOptions: {
+    fit: true,
+    minZoom: 0.25,
+    zoomScaleSensitivity: 1.5,
+    center: true,
+    controlIconsEnabled: true,
+  },
 };
 
 const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
@@ -49,8 +58,10 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
         x: (config.width + config.horizontalGap) * idx,
         y: (config.height + config.verticalGap) * depth,
         node: dagnode,
-        index: dagnode.parent !== null ? r.parentToIds[dagnode.parent].indexOf(dagnode.id) : 0,
+        index: dagnode.parents?.length > 0 ? r.parentToIds[dagnode.parents[0]].indexOf(dagnode.id) : 0,
       };
+
+      // index : first parent? ^^
 
       nodes.push(n);
       idToNode[dagnode.id] = n;
@@ -66,9 +77,23 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
   return { nodes, edges };
 };
 
+const calculateMaxDepth = (node: DAGNode, idToNode: Record<IdType, DAGNode>, depth: number) => {
+  let resultDepth = depth;
+  if (node?.parents?.length > 0) {
+    for (const parent of node.parents) {
+      const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, depth + 1);
+      if (tmpDepth > resultDepth) {
+        resultDepth = tmpDepth;
+      }
+    }
+  }
+
+  return resultDepth;
+};
+
 const calculateDepths = (nodes: DAGNode[]) => {
   const idToNode: Record<IdType, DAGNode> = {};
-  const idToParent: Record<IdType, IdType> = {};
+
   const idToDepth: Record<IdType, IdType> = {};
   const idToLeafCount: Record<IdType, number> = {};
   const idToDepthIndex: Record<IdType, number> = {};
@@ -79,23 +104,23 @@ const calculateDepths = (nodes: DAGNode[]) => {
 
   for (const node of nodes) {
     idToNode[node.id] = node;
-    idToParent[node.id] = node.parent;
-    if (!parentToIds[node.parent]) {
-      parentToIds[node.parent] = [];
+    if (node.parents?.length) {
+      for (const parentId of node.parents) {
+        if (!parentToIds[parentId]) {
+          parentToIds[parentId] = [];
+        }
+        parentToIds[parentId].push(node.id);
+      }
     }
-
-    parentToIds[node.parent].push(node.id);
   }
 
   for (const node of nodes) {
-    let depth = 0;
-    let tmp = node;
-    while (tmp.parent !== null && tmp.parent !== undefined) {
-      tmp = idToNode[tmp.parent];
-      depth += 1;
-    }
-    if (depthToNodes[depth] === undefined) {
-      depthToNodes[depth] = [];
+    const depth = calculateMaxDepth(node, idToNode, 0);
+    console.log("[depth] node.id:", node.id, "depth:", depth);
+    for (let d = 0; d < depth + 1; d++) {
+      if (depthToNodes[d] === undefined) {
+        depthToNodes[d] = [];
+      }
     }
 
     idToLeafCount[node.id] = 0;
@@ -107,25 +132,31 @@ const calculateDepths = (nodes: DAGNode[]) => {
       maxDepth = depth;
     }
 
-    if (node.parent !== null && node.parent !== undefined) {
-      edges.push([node, idToNode[node.parent]]);
+    if (node.parents?.length) {
+      for (const parent of node.parents) {
+        edges.push([node, idToNode[parent]]);
+      }
     }
   }
   if (nodes.length) {
     for (let depth = maxDepth; depth > -1; depth--) {
       for (const node of depthToNodes[depth]) {
-        idToLeafCount[node.parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+        if (node.parents?.length) {
+          for (const parent of node.parents) {
+            idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+          }
+        }
       }
 
       if (depth > 0) {
-        depthToNodes[depth].sort((a, b) => a.parent - b.parent || a.id - b.id);
+        //depthToNodes[depth].sort((a, b) => a.parent - b.parent || a.id - b.id);
       }
     }
   }
 
   return {
     parentToIds,
-    idToParent,
+    //idToParent,
     idToNode,
     idToDepth,
     edges,
@@ -147,10 +178,33 @@ export const DAGSVGComponent = (props: {
 }) => {
   const configuration = props.configuration || defaultConfiguration;
   const svgRef = React.useRef<SVGSVGElement>();
+  const panZoomInstance = React.useRef<SvgPanZoom.Instance>();
+
+  const handleClick = React.useCallback((node: Node) => {
+    console.log("[handleClick]", node.x, node.y);
+
+    // panZoomInstance.current?.zoomAtPoint(1, { x: node.x, y: node.y });
+
+    const point = svgRef.current.createSVGPoint();
+
+    const x = svgRef.current.getElementsByClassName("svg-pan-zoom_viewport");
+    console.log(x);
+
+    //const oldCTM = (panZoomInstance.current as any).viewport.getCTM();
+    //console.log("[handleClick]", svgRef.current, oldCTM);
+
+    //(window as any).controller = panZoomInstance.current;
+    // relativePoint = point.matrixTransform(oldCTM.inverse()),
+    // modifier = this.svg
+    //   .createSVGMatrix()
+    //   .translate(relativePoint.x, relativePoint.y)
+    //   .scale(zoomScale)
+    //   .translate(-relativePoint.x, -relativePoint.y);
+  }, []);
 
   const renderNode = props.renderNode
     ? props.renderNode
-    : (node: Node) => <NodeComponent node={node} key={`${node.node.id}`} />;
+    : (node: Node) => <NodeComponent node={node} key={`${node.node.id}`} onClick={handleClick} />;
   const renderEdge = props.renderEdge
     ? props.renderEdge
     : (edge: Edge) => (
@@ -169,12 +223,10 @@ export const DAGSVGComponent = (props: {
       }
 
       if (configuration.enablePanZoom) {
-        const controller = svgPanZoom(svgRef.current);
-        controller.setMinZoom(0.25);
-        controller.setMaxZoom(2.5);
-        controller.setZoomScaleSensitivity(1.5);
+        panZoomInstance.current = svgPanZoom(svgRef.current, configuration.panZoomOptions);
+
         if (props.onPanZoomInit) {
-          props.onPanZoomInit(controller);
+          props.onPanZoomInit(panZoomInstance.current);
         }
       }
     }
@@ -207,9 +259,15 @@ export interface Node {
   node: DAGNode;
 }
 
-export const NodeComponent = (props: { node: Node; key?: string }): JSX.Element => {
+export const NodeComponent = (props: { node: Node; key?: string; onClick?(node: Node): void }): JSX.Element => {
   return (
-    <g>
+    <g
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        props.onClick && props.onClick(props.node);
+      }}
+    >
       <rect
         width={props.node.width}
         height={props.node.height}
