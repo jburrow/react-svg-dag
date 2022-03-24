@@ -3,7 +3,7 @@ export declare type IdType = number;
 export interface DAGNode {
     title?: string;
     id: IdType;
-    parent?: IdType;
+    parents?: IdType[];
 }
 export interface Configuration {
     width: number;
@@ -12,6 +12,7 @@ export interface Configuration {
     verticalGap: number;
     enablePanZoom: boolean;
     edgePadding: number;
+    panZoomOptions?: SvgPanZoom.Options;
 }
 export declare const defaultConfiguration: Configuration;
 export declare const DAGSVGComponent: (props: {
@@ -39,6 +40,7 @@ export interface Node {
 export declare const NodeComponent: (props: {
     node: Node;
     key?: string;
+    onClick?(node: Node): void;
 }) => JSX.Element;
 export declare const EdgeComponent: (props: {
     from: Node;
