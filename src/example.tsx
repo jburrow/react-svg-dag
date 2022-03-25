@@ -1,20 +1,47 @@
-import { DAGSVGComponent, DAGNode, Node } from "./index";
+import { DAGSVGComponent, DAGNode, Node, NodeComponentProps } from "./index";
 import { render } from "react-dom";
 import * as React from "react";
-import { randomNodes } from "./example-nodes";
+import { randomNodes, exampleDiamond } from "./example-nodes";
 
-export const renderExample = () => {
-  const nodes = randomNodes();
-  //const nodes = example001;
-  render(
+const ExampleApp = () => {
+  const [nodes, setNodes] = React.useState<DAGNode[]>(randomNodes());
+  const [selectedNode, setSelectedNode] = React.useState<Node>();
+
+  return (
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "row" }}>
-      <pre style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>{JSON.stringify(nodes, null, 2)}</pre>
+      <div style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>
+        {nodes.map((node) => (
+          <pre
+            style={{
+              color:
+                node.id === selectedNode?.node?.id
+                  ? "red"
+                  : node.parents?.indexOf(selectedNode?.node?.id) > -1
+                  ? "pink"
+                  : "grey",
+            }}
+          >
+            {JSON.stringify(node, null, 2)}
+          </pre>
+        ))}
+      </div>
       <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
-        <DAGSVGComponent nodes={nodes} style={{ height: "500px", width: "100%" }} />
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <button onClick={() => setNodes(randomNodes())}>Generate Random Nodes</button>
+          <button onClick={() => setNodes(exampleDiamond)}>diamond</button>
+        </div>
         <DAGSVGComponent
           nodes={nodes}
+          style={{ height: "500px", width: "100%" }}
+          onClick={setSelectedNode}
+          selectedNode={selectedNode?.node.id}
+        />
+        <DAGSVGComponent
+          onClick={setSelectedNode}
+          selectedNode={selectedNode?.node.id}
+          nodes={nodes}
           style={{ height: "1024px", width: "100%" }}
-          renderNode={(node: Node) => <NodeComponent node={node} key={`${node.node.id}`} />}
+          renderNode={(x) => <NodeComponent {...x} />}
           onPanZoomInit={(c) => {
             console.log("[onPanZoomInit]", c);
           }}
@@ -23,23 +50,26 @@ export const renderExample = () => {
           }}
         />
       </div>
-    </div>,
-    document.getElementById("out")
+    </div>
   );
 };
 
-const NodeComponent = (props: { node: Node; key: string }) => {
-  const colors = ["red", "orange", "green", "cyan", "pick", "silver", "gold"];
+export const renderExample = () => {
+  render(<ExampleApp />, document.getElementById("out"));
+};
+
+const NodeComponent = (props: NodeComponentProps) => {
+  const colors = ["red", "purple", "green", "cyan", "pink", "silver", "gold"];
 
   return (
-    <g>
+    <g onClick={() => props.onClick(props.node)}>
       <rect
         width={props.node.width}
         height={props.node.height}
         x={props.node.x}
         y={props.node.y}
         rx={5}
-        fill={colors[props.node.depth] || "white"}
+        fill={props.selected ? "orange" : colors[props.node.depth] || "white"}
         stroke="black"
       />
       <text

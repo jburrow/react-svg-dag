@@ -1,6 +1,6 @@
 {
   "name": "react-svg-dag",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "React simple svg dag",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

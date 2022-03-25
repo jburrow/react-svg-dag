@@ -10,6 +10,6 @@ test("<DAGSVGComponent /> no nodes", () => {
     const component = (0, react_test_renderer_1.create)(React.createElement(index_1.DAGSVGComponent, { nodes: [] }));
 });
 test("<DAGSVGComponent /> one node", () => {
-    const component = (0, react_test_renderer_1.create)(React.createElement(index_1.DAGSVGComponent, { nodes: [{ id: 1 }, { id: 2, parent: 1 }] }));
+    const component = (0, react_test_renderer_1.create)(React.createElement(index_1.DAGSVGComponent, { nodes: [{ id: 1 }, { id: 2 }, { id: 3, parents: [1, 2] }] }));
 });
 //# sourceMappingURL=index.test.js.map
