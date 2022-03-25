@@ -9,9 +9,9 @@ const ExampleApp = () => {
     const [nodes, setNodes] = React.useState((0, example_nodes_1.randomNodes)());
     const [selectedNode, setSelectedNode] = React.useState();
     return (React.createElement("div", { style: { height: "100%", width: "100%", display: "flex", flexDirection: "row" } },
-        React.createElement("div", { style: { lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" } }, nodes.map((node) => {
+        React.createElement("div", { style: { lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" } }, nodes.map((node, idx) => {
             var _a, _b, _c;
-            return (React.createElement("pre", { style: {
+            return (React.createElement("pre", { key: idx, style: {
                     color: node.id === ((_a = selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node) === null || _a === void 0 ? void 0 : _a.id)
                         ? "red"
                         : ((_b = node.parents) === null || _b === void 0 ? void 0 : _b.indexOf((_c = selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node) === null || _c === void 0 ? void 0 : _c.id)) > -1
