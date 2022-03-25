@@ -6,14 +6,22 @@ import { randomNodes, exampleDiamond } from "./example-nodes";
 const ExampleApp = () => {
   const [nodes, setNodes] = React.useState<DAGNode[]>(randomNodes());
   const [selectedNode, setSelectedNode] = React.useState<Node>();
-  const r = JSON.stringify(nodes, null, 2).split("},");
 
   return (
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "row" }}>
       <div style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>
-        {r.map((l) => (
-          <pre style={{ color: l.indexOf(`: ${selectedNode?.node?.id},`) > -1 ? "red" : "black" }}>
-            {l} {"},"}
+        {nodes.map((node) => (
+          <pre
+            style={{
+              color:
+                node.id === selectedNode?.node?.id
+                  ? "red"
+                  : node.parents?.indexOf(selectedNode?.node?.id) > -1
+                  ? "pink"
+                  : "grey",
+            }}
+          >
+            {JSON.stringify(node, null, 2)}
           </pre>
         ))}
       </div>

@@ -206,10 +206,10 @@ export const DAGSVGComponent = (props: {
 
     // panZoomInstance.current?.zoomAtPoint(1, { x: node.x, y: node.y });
 
-    const point = svgRef.current.createSVGPoint();
+    //const point = svgRef.current.createSVGPoint();
 
-    const x = svgRef.current.getElementsByClassName("svg-pan-zoom_viewport");
-    console.log(x);
+    //const x = svgRef.current.getElementsByClassName("svg-pan-zoom_viewport");
+    //console.log(x);
 
     //const oldCTM = (panZoomInstance.current as any).viewport.getCTM();
     //console.log("[handleClick]", svgRef.current, oldCTM);
@@ -254,14 +254,27 @@ export const DAGSVGComponent = (props: {
 
   const dag = generateNodesAndEdges(props.nodes, configuration);
   // We need to sort the edges so the selected edge can
-  const edges = dag.edges.sort((a, b) =>
-    a.from.node.id === selectedNode ||
-    a.to.node.id === selectedNode ||
-    b.from.node.id === selectedNode ||
-    b.to.node.id === selectedNode
-      ? 1
-      : -1
-  );
+  let edges = dag.edges;
+
+  if (selectedNode) {
+    const other: Edge[] = [];
+    const last: Edge[] = [];
+
+    for (const e of edges) {
+      if (e.from.node.id === selectedNode || e.to.node.id === selectedNode) {
+        last.push(e);
+      } else {
+        other.push(e);
+      }
+    }
+
+    edges = other.concat(last);
+
+    console.log(
+      "[edges] after",
+      edges.map((e) => `${e.from.node.id} ${e.to.node.id}`)
+    );
+  }
 
   return (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
