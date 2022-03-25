@@ -190,11 +190,16 @@ export const DAGSVGComponent = (props: {
   renderNode?(props: NodeComponentProps): JSX.Element;
   renderEdge?(edge: Edge, selected: boolean): JSX.Element;
   onClick?(node: Node): void;
+  selectedNode?: IdType;
 }) => {
   const configuration = props.configuration || defaultConfiguration;
   const svgRef = React.useRef<SVGSVGElement>();
   const panZoomInstance = React.useRef<SvgPanZoom.Instance>();
   const [selectedNode, setSelectedNode] = React.useState<number>();
+
+  React.useEffect(() => {
+    setSelectedNode(props.selectedNode);
+  }, [props.selectedNode]);
 
   const handleClick = React.useCallback((node: Node) => {
     console.log("[handleClick]", node.x, node.y);

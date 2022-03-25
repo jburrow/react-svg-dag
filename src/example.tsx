@@ -30,9 +30,15 @@ const ExampleApp = () => {
           <button onClick={() => setNodes(randomNodes())}>Generate Random Nodes</button>
           <button onClick={() => setNodes(exampleDiamond)}>diamond</button>
         </div>
-        <DAGSVGComponent nodes={nodes} style={{ height: "500px", width: "100%" }} onClick={setSelectedNode} />
+        <DAGSVGComponent
+          nodes={nodes}
+          style={{ height: "500px", width: "100%" }}
+          onClick={setSelectedNode}
+          selectedNode={selectedNode?.node.id}
+        />
         <DAGSVGComponent
           onClick={setSelectedNode}
+          selectedNode={selectedNode?.node.id}
           nodes={nodes}
           style={{ height: "1024px", width: "100%" }}
           renderNode={(x) => <NodeComponent {...x} />}
