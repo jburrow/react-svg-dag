@@ -23,12 +23,10 @@ const generateNodesAndEdges = (dagNodes, config) => {
     const r = calculateDepths(dagNodes);
     const nodes = [];
     const idToNode = {};
-    console.log("parentToIds", r);
     for (let depth = r.depth; depth > -1; depth--) {
         const dagnodes = r.depthToNodes[depth] || [];
-        const x = r.maxNumberOfNodesInRow - dagnodes.length;
-        let idx = x ? x / 2 : 0;
-        //(r.maxNumberOfNodesInRow - dagnodes.length)/2
+        const initialRowOffset = r.maxNumberOfNodesInRow - dagnodes.length;
+        let idx = initialRowOffset ? initialRowOffset / 2 : 0;
         for (const dagnode of dagnodes) {
             const idxShift = (r.idToLeafCount[dagnode.id] || 1) / 2;
             idx += idxShift;
@@ -41,7 +39,7 @@ const generateNodesAndEdges = (dagNodes, config) => {
                 node: dagnode,
                 index: ((_a = dagnode.parents) === null || _a === void 0 ? void 0 : _a.length) > 0 ? r.parentToIds[dagnode.parents[0]].indexOf(dagnode.id) : 0,
             };
-            // index : first parent? ^^
+            //TODO -  index : first parent? ^^
             nodes.push(n);
             idToNode[dagnode.id] = n;
             idx += idxShift;
@@ -105,7 +103,6 @@ const calculateDepths = (nodes) => {
             for (const node of depthToNodes[depth]) {
                 if ((_b = node.parents) === null || _b === void 0 ? void 0 : _b.length) {
                     for (const parent of node.parents) {
-                        // console.log("[x]", depth, "parent", parent, idToDepth[parent], "Current", node.id, idToDepth[node.id]);
                         if (idToDepth[parent] === parent[node.id] - 1) {
                             idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
                         }
@@ -151,7 +148,6 @@ const DAGSVGComponent = (props) => {
         setSelectedNode(props.selectedNode);
     }, [props.selectedNode]);
     const handleClick = React.useCallback((node) => {
-        console.log("[handleClick]", node.x, node.y);
         if (props.onClick) {
             props.onClick(node);
         }
@@ -159,9 +155,7 @@ const DAGSVGComponent = (props) => {
         // panZoomInstance.current?.zoomAtPoint(1, { x: node.x, y: node.y });
         //const point = svgRef.current.createSVGPoint();
         //const x = svgRef.current.getElementsByClassName("svg-pan-zoom_viewport");
-        //console.log(x);
         //const oldCTM = (panZoomInstance.current as any).viewport.getCTM();
-        //console.log("[handleClick]", svgRef.current, oldCTM);
         //(window as any).controller = panZoomInstance.current;
         // relativePoint = point.matrixTransform(oldCTM.inverse()),
         // modifier = this.svg
@@ -188,7 +182,7 @@ const DAGSVGComponent = (props) => {
         }
     }, [svgRef.current]);
     const dag = generateNodesAndEdges(props.nodes, configuration);
-    // We need to sort the edges so the selected edge can
+    // We need to sort the edges so the selected edge can render on top of each other
     let edges = dag.edges;
     if (selectedNode) {
         const other = [];
@@ -202,12 +196,11 @@ const DAGSVGComponent = (props) => {
             }
         }
         edges = other.concat(last);
-        console.log("[edges] after", edges.map((e) => `${e.from.node.id} ${e.to.node.id}`));
     }
     return (React.createElement("svg", { version: "1.1", xmlns: "http://www.w3.org/2000/svg", ref: svgRef, style: props.style || {} },
         React.createElement("g", null,
             edges.map((e) => renderEdge(e, e.from.node.id === selectedNode || e.to.node.id === selectedNode)),
-            dag.nodes.map((n) => renderNode({ node: n, onClick: handleClick, selected: n.node.id === selectedNode })))));
+            dag.nodes.map((n) => renderNode({ node: n, onClick: handleClick, selected: n.node.id === selectedNode, key: `${n.node.id}` })))));
 };
 exports.DAGSVGComponent = DAGSVGComponent;
 const NodeComponent = (props) => {
@@ -227,7 +220,6 @@ const EdgeComponent = (props) => {
     const to_x = props.to.x + props.to.width / 2;
     const to_y = props.to.y + (isAbove ? props.to.height : 0);
     const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * props.configuration.edgePadding;
-    console.log("[edge]", props.from.node.id, props.from.depth, props.to.node.id, props.to.depth);
     return (React.createElement("path", { d: `M ${from_x} ${from_y} V ${from_y - mid_y}  H ${to_x} L ${to_x} ${to_y}`, stroke: props.selected ? "red" : "black", fill: "transparent" }));
 };
 exports.EdgeComponent = EdgeComponent;

@@ -10,8 +10,9 @@ const ExampleApp = () => {
   return (
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "row" }}>
       <div style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>
-        {nodes.map((node) => (
+        {nodes.map((node, idx) => (
           <pre
+            key={idx}
             style={{
               color:
                 node.id === selectedNode?.node?.id
