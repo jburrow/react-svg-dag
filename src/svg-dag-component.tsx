@@ -40,7 +40,7 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
   const r = calculateDepths(dagNodes);
   const nodes: Node[] = [];
   const idToNode: Record<IdType, Node> = {};
-  console.log("parentToIds", r.parentToIds);
+  console.log("parentToIds", r);
   for (let depth = r.depth; depth > -1; depth--) {
     const dagnodes = r.depthToNodes[depth] || [];
 
@@ -134,7 +134,8 @@ const calculateDepths = (nodes: DAGNode[]) => {
       for (const node of depthToNodes[depth]) {
         if (node.parents?.length) {
           for (const parent of node.parents) {
-            if (idToDepth[parent] === parent[node.id] + 1) {
+            // console.log("[x]", depth, "parent", parent, idToDepth[parent], "Current", node.id, idToDepth[node.id]);
+            if (idToDepth[parent] === parent[node.id] - 1) {
               idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
             }
           }
