@@ -61,4 +61,8 @@ export const exampleDiamond: DAGNode[] = [
     id: 7,
     parents: [4, 5, 6],
   },
+  {
+    id: 8,
+    parents: [1, 2, 3, 4, 5, 6, 7, 0],
+  },
 ];

@@ -40,7 +40,7 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
   const r = calculateDepths(dagNodes);
   const nodes: Node[] = [];
   const idToNode: Record<IdType, Node> = {};
-
+  console.log("parentToIds", r.parentToIds);
   for (let depth = r.depth; depth > -1; depth--) {
     const dagnodes = r.depthToNodes[depth] || [];
 
@@ -69,7 +69,7 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
     }
   }
 
-  const edges = [];
+  const edges: Edge[] = [];
   for (const edge of r.edges) {
     edges.push({ from: idToNode[edge[0].id], to: idToNode[edge[1].id] });
   }
@@ -93,7 +93,6 @@ const calculateMaxDepth = (node: DAGNode, idToNode: Record<IdType, DAGNode>, dep
 
 const calculateDepths = (nodes: DAGNode[]) => {
   const idToNode: Record<IdType, DAGNode> = {};
-
   const idToDepth: Record<IdType, IdType> = {};
   const idToLeafCount: Record<IdType, number> = {};
   const idToDepthIndex: Record<IdType, number> = {};
@@ -104,19 +103,11 @@ const calculateDepths = (nodes: DAGNode[]) => {
 
   for (const node of nodes) {
     idToNode[node.id] = node;
-    if (node.parents?.length) {
-      for (const parentId of node.parents) {
-        if (!parentToIds[parentId]) {
-          parentToIds[parentId] = [];
-        }
-        parentToIds[parentId].push(node.id);
-      }
-    }
   }
 
   for (const node of nodes) {
     const depth = calculateMaxDepth(node, idToNode, 0);
-    console.log("[depth] node.id:", node.id, "depth:", depth);
+
     for (let d = 0; d < depth + 1; d++) {
       if (depthToNodes[d] === undefined) {
         depthToNodes[d] = [];
@@ -143,7 +134,9 @@ const calculateDepths = (nodes: DAGNode[]) => {
       for (const node of depthToNodes[depth]) {
         if (node.parents?.length) {
           for (const parent of node.parents) {
-            idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+            if (idToDepth[parent] === parent[node.id] + 1) {
+              idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+            }
           }
         }
       }
@@ -154,9 +147,19 @@ const calculateDepths = (nodes: DAGNode[]) => {
     }
   }
 
+  for (const node of nodes) {
+    if (node.parents?.length) {
+      for (const parentId of node.parents) {
+        if (!parentToIds[parentId]) {
+          parentToIds[parentId] = [];
+        }
+        parentToIds[parentId].push(node.id);
+      }
+    }
+  }
+
   return {
     parentToIds,
-    //idToParent,
     idToNode,
     idToDepth,
     edges,
@@ -167,21 +170,25 @@ const calculateDepths = (nodes: DAGNode[]) => {
   };
 };
 
+export type DAGEdge = { from: IdType; to: IdType };
+
 export const DAGSVGComponent = (props: {
   nodes: DAGNode[];
   configuration?: Configuration;
   onSVG?(element: any): void;
   onPanZoomInit?(controller: SvgPanZoom.Instance): void;
   style?: React.CSSProperties;
-  renderNode?(node: Node): JSX.Element;
-  renderEdge?(edge: Edge): JSX.Element;
+  renderNode?(props: NodeComponentProps): JSX.Element;
+  renderEdge?(edge: Edge, selected: boolean): JSX.Element;
 }) => {
   const configuration = props.configuration || defaultConfiguration;
   const svgRef = React.useRef<SVGSVGElement>();
   const panZoomInstance = React.useRef<SvgPanZoom.Instance>();
+  const [selectedNode, setSelectedNode] = React.useState<number>();
 
   const handleClick = React.useCallback((node: Node) => {
     console.log("[handleClick]", node.x, node.y);
+    setSelectedNode(node.node.id);
 
     // panZoomInstance.current?.zoomAtPoint(1, { x: node.x, y: node.y });
 
@@ -202,9 +209,7 @@ export const DAGSVGComponent = (props: {
     //   .translate(-relativePoint.x, -relativePoint.y);
   }, []);
 
-  const renderNode = props.renderNode
-    ? props.renderNode
-    : (node: Node) => <NodeComponent node={node} key={`${node.node.id}`} onClick={handleClick} />;
+  const renderNode = props.renderNode ? props.renderNode : (x: NodeComponentProps) => <NodeComponent {...x} />;
   const renderEdge = props.renderEdge
     ? props.renderEdge
     : (edge: Edge) => (
@@ -213,6 +218,7 @@ export const DAGSVGComponent = (props: {
           to={edge.to}
           key={`${edge.from.node.id}-${edge.to.node.id}`}
           configuration={configuration}
+          selected={selectedNode === edge.from.node.id || selectedNode === edge.to.node.id}
         />
       );
 
@@ -233,12 +239,21 @@ export const DAGSVGComponent = (props: {
   }, [svgRef.current]);
 
   const dag = generateNodesAndEdges(props.nodes, configuration);
+  // We need to sort the edges so the selected edge can
+  const edges = dag.edges.sort((a, b) =>
+    a.from.node.id === selectedNode ||
+    a.to.node.id === selectedNode ||
+    b.from.node.id === selectedNode ||
+    b.to.node.id === selectedNode
+      ? 1
+      : -1
+  );
 
   return (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
       <g>
-        {dag.nodes.map(renderNode)}
-        {dag.edges.map(renderEdge)}
+        {edges.map((e) => renderEdge(e, e.from.node.id === selectedNode || e.to.node.id === selectedNode))}
+        {dag.nodes.map((n) => renderNode({ node: n, onClick: handleClick, selected: n.node.id === selectedNode }))}
       </g>
     </svg>
   );
@@ -259,7 +274,14 @@ export interface Node {
   node: DAGNode;
 }
 
-export const NodeComponent = (props: { node: Node; key?: string; onClick?(node: Node): void }): JSX.Element => {
+export interface NodeComponentProps {
+  node: Node;
+  key?: string;
+  onClick?(node: Node): void;
+  selected: boolean;
+}
+
+export const NodeComponent = (props: NodeComponentProps): JSX.Element => {
   return (
     <g
       onClick={(e) => {
@@ -273,8 +295,8 @@ export const NodeComponent = (props: { node: Node; key?: string; onClick?(node: 
         height={props.node.height}
         x={props.node.x}
         y={props.node.y}
-        fill="white"
-        stroke="black"
+        fill={props.selected ? "orange" : "white"}
+        stroke={props.selected ? "red" : "black"}
       />
       <text
         x={props.node.x + props.node.width / 2}
@@ -294,6 +316,7 @@ export const EdgeComponent = (props: {
   to: Node;
   key?: string;
   configuration: Configuration;
+  selected: boolean;
 }): JSX.Element => {
   const isAbove = props.from.y > props.to.y;
   const from_x = props.from.x + props.from.width / 2;
@@ -304,10 +327,12 @@ export const EdgeComponent = (props: {
 
   const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * props.configuration.edgePadding;
 
+  console.log("[edge]", props.from.node.id, props.from.depth, props.to.node.id, props.to.depth);
+
   return (
     <path
       d={`M ${from_x} ${from_y} V ${from_y - mid_y}  H ${to_x} L ${to_x} ${to_y}`}
-      stroke="black"
+      stroke={props.selected ? "red" : "black"}
       fill="transparent"
     />
   );
