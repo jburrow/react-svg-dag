@@ -5,21 +5,29 @@ import { randomNodes, exampleDiamond } from "./example-nodes";
 
 const ExampleApp = () => {
   const [nodes, setNodes] = React.useState<DAGNode[]>(randomNodes());
+  const [selectedNode, setSelectedNode] = React.useState<Node>();
+  const r = JSON.stringify(nodes, null, 2).split("},");
+
   return (
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "row" }}>
-      <pre style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>{JSON.stringify(nodes, null, 2)}</pre>
+      <div style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>
+        {r.map((l) => (
+          <pre style={{ color: l.indexOf(`: ${selectedNode?.node?.id},`) > -1 ? "red" : "black" }}>
+            {l} {"},"}
+          </pre>
+        ))}
+      </div>
       <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
         <div style={{ display: "flex", flexDirection: "row" }}>
           <button onClick={() => setNodes(randomNodes())}>Generate Random Nodes</button>
           <button onClick={() => setNodes(exampleDiamond)}>diamond</button>
         </div>
-        <DAGSVGComponent nodes={nodes} style={{ height: "500px", width: "100%" }} />
+        <DAGSVGComponent nodes={nodes} style={{ height: "500px", width: "100%" }} onClick={setSelectedNode} />
         <DAGSVGComponent
+          onClick={setSelectedNode}
           nodes={nodes}
           style={{ height: "1024px", width: "100%" }}
-          renderNode={(x) => (
-            <NodeComponent node={x.node} key={`${x.node.node.id}`} selected={x.selected} onClick={x.onClick} />
-          )}
+          renderNode={(x) => <NodeComponent {...x} />}
           onPanZoomInit={(c) => {
             console.log("[onPanZoomInit]", c);
           }}
@@ -40,7 +48,7 @@ const NodeComponent = (props: NodeComponentProps) => {
   const colors = ["red", "purple", "green", "cyan", "pink", "silver", "gold"];
 
   return (
-    <g>
+    <g onClick={() => props.onClick(props.node)}>
       <rect
         width={props.node.width}
         height={props.node.height}
