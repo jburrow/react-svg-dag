@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EdgeComponent = exports.NodeComponent = exports.DAGSVGComponent = exports.defaultConfiguration = void 0;
+exports.EdgeComponent = exports.NodeComponent = exports.DAGSVGComponent = exports.calculateDepths = exports.generateNodesAndEdges = exports.defaultConfiguration = void 0;
 const React = require("react");
 const svgPanZoom = require("svg-pan-zoom");
+const react_error_boundary_1 = require("react-error-boundary");
 exports.defaultConfiguration = {
     width: 100,
     height: 50,
@@ -20,16 +21,20 @@ exports.defaultConfiguration = {
 };
 const generateNodesAndEdges = (dagNodes, config) => {
     var _a;
-    const r = calculateDepths(dagNodes);
+    const r = (0, exports.calculateDepths)(dagNodes);
     const nodes = [];
     const idToNode = {};
-    for (let depth = r.depth; depth > -1; depth--) {
+    for (let depth = r.depth - 1; depth > -1; depth--) {
         const dagnodes = r.depthToNodes[depth] || [];
         const initialRowOffset = r.maxNumberOfNodesInRow - dagnodes.length;
         let idx = initialRowOffset ? initialRowOffset / 2 : 0;
         for (const dagnode of dagnodes) {
             const idxShift = (r.idToLeafCount[dagnode.id] || 1) / 2;
             idx += idxShift;
+            const parents = r.idToParentIds[dagnode.id];
+            const index = (parents === null || parents === void 0 ? void 0 : parents.length) > 0 && ((_a = r.parentToIds[parents[0]]) === null || _a === void 0 ? void 0 : _a.length) > 0
+                ? r.parentToIds[parents[0]].indexOf(dagnode.id)
+                : 0;
             const n = {
                 depth,
                 height: config.height,
@@ -37,9 +42,8 @@ const generateNodesAndEdges = (dagNodes, config) => {
                 x: (config.width + config.horizontalGap) * idx,
                 y: (config.height + config.verticalGap) * depth,
                 node: dagnode,
-                index: ((_a = dagnode.parents) === null || _a === void 0 ? void 0 : _a.length) > 0 ? r.parentToIds[dagnode.parents[0]].indexOf(dagnode.id) : 0,
+                index,
             };
-            //TODO -  index : first parent? ^^
             nodes.push(n);
             idToNode[dagnode.id] = n;
             idx += idxShift;
@@ -51,34 +55,45 @@ const generateNodesAndEdges = (dagNodes, config) => {
     }
     return { nodes, edges };
 };
-const calculateMaxDepth = (node, idToNode, depth) => {
-    var _a;
+exports.generateNodesAndEdges = generateNodesAndEdges;
+const calculateMaxDepth = (node, idToNode, idToParentIds, depth) => {
     let resultDepth = depth;
-    if (((_a = node === null || node === void 0 ? void 0 : node.parents) === null || _a === void 0 ? void 0 : _a.length) > 0) {
-        for (const parent of node.parents) {
-            const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, depth + 1);
-            if (tmpDepth > resultDepth) {
-                resultDepth = tmpDepth;
+    if (node) {
+        const parents = idToParentIds[node.id];
+        if ((parents === null || parents === void 0 ? void 0 : parents.length) > 0) {
+            for (const parent of parents) {
+                const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, idToParentIds, depth + 1);
+                if (tmpDepth > resultDepth) {
+                    resultDepth = tmpDepth;
+                }
             }
         }
     }
     return resultDepth;
 };
 const calculateDepths = (nodes) => {
-    var _a, _b, _c;
+    var _a, _b;
     const idToNode = {};
     const idToDepth = {};
     const idToLeafCount = {};
     const idToDepthIndex = {};
+    const idToParentIds = {};
     const depthToNodes = {};
     const parentToIds = {};
     const edges = [];
     let maxDepth = 0;
     for (const node of nodes) {
         idToNode[node.id] = node;
+        if (Array.isArray(node.parents)) {
+            //TODO : Do we want a type filter?
+            idToParentIds[node.id] = ((_a = node.parents) === null || _a === void 0 ? void 0 : _a.filter((p) => p != null && p !== undefined && typeof p === "number")) || [];
+        }
+        else {
+            idToParentIds[node.id] = [];
+        }
     }
     for (const node of nodes) {
-        const depth = calculateMaxDepth(node, idToNode, 0);
+        const depth = calculateMaxDepth(node, idToNode, idToParentIds, 0);
         for (let d = 0; d < depth + 1; d++) {
             if (depthToNodes[d] === undefined) {
                 depthToNodes[d] = [];
@@ -91,9 +106,12 @@ const calculateDepths = (nodes) => {
         if (depth > maxDepth) {
             maxDepth = depth;
         }
-        if ((_a = node.parents) === null || _a === void 0 ? void 0 : _a.length) {
-            for (const parent of node.parents) {
+        for (const parent of idToParentIds[node.id]) {
+            if (idToNode[parent]) {
                 edges.push([node, idToNode[parent]]);
+            }
+            else {
+                console.warn("[define-edge] Unable to find a node ", parent, "Known nodes:", Object.keys(idToNode));
             }
         }
     }
@@ -101,24 +119,31 @@ const calculateDepths = (nodes) => {
     if (nodes.length) {
         for (let depth = maxDepth; depth > -1; depth--) {
             for (const node of depthToNodes[depth]) {
-                if ((_b = node.parents) === null || _b === void 0 ? void 0 : _b.length) {
-                    for (const parent of node.parents) {
-                        if (idToDepth[parent] === parent[node.id] - 1) {
-                            idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
-                        }
-                    }
-                }
+                idToParentIds[node.id]
+                    .filter((p) => idToDepth[p] === p[node.id] - 1)
+                    .map((parent) => {
+                    idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+                });
             }
             if (depthToNodes[depth].length > maxNumberOfNodesInRow) {
                 maxNumberOfNodesInRow = depthToNodes[depth].length;
             }
             if (depth > 0) {
-                //depthToNodes[depth].sort((a, b) => a.parent - b.parent || a.id - b.id);
+                depthToNodes[depth].sort((a, b) => {
+                    try {
+                        const ap = idToParentIds[a.id].length ? idToParentIds[a.id][0] : 0;
+                        const bp = idToParentIds[b.id].length ? idToParentIds[b.id][0] : 0;
+                        return ap - bp || a.id - b.id;
+                    }
+                    catch (_a) {
+                        return 0;
+                    }
+                });
             }
         }
     }
     for (const node of nodes) {
-        if ((_c = node.parents) === null || _c === void 0 ? void 0 : _c.length) {
+        if ((_b = node.parents) === null || _b === void 0 ? void 0 : _b.length) {
             for (const parentId of node.parents) {
                 if (!parentToIds[parentId]) {
                     parentToIds[parentId] = [];
@@ -134,11 +159,13 @@ const calculateDepths = (nodes) => {
         idToDepth,
         edges,
         idToDepthIndex,
+        idToParentIds,
         depthToNodes,
-        depth: maxDepth,
+        depth: maxDepth + 1,
         idToLeafCount,
     };
 };
+exports.calculateDepths = calculateDepths;
 const DAGSVGComponent = (props) => {
     const configuration = props.configuration || exports.defaultConfiguration;
     const svgRef = React.useRef();
@@ -164,7 +191,7 @@ const DAGSVGComponent = (props) => {
         //   .scale(zoomScale)
         //   .translate(-relativePoint.x, -relativePoint.y);
     }, []);
-    const renderNode = props.renderNode ? props.renderNode : (x) => React.createElement(exports.NodeComponent, Object.assign({}, x));
+    const renderNode = props.renderNode ? props.renderNode : (node) => React.createElement(exports.NodeComponent, Object.assign({}, node));
     const renderEdge = props.renderEdge
         ? props.renderEdge
         : (edge) => (React.createElement(exports.EdgeComponent, { from: edge.from, to: edge.to, key: `${edge.from.node.id}-${edge.to.node.id}`, configuration: configuration, selected: selectedNode === edge.from.node.id || selectedNode === edge.to.node.id }));
@@ -181,7 +208,7 @@ const DAGSVGComponent = (props) => {
             }
         }
     }, [svgRef.current]);
-    const dag = generateNodesAndEdges(props.nodes, configuration);
+    const dag = (0, exports.generateNodesAndEdges)(props.nodes, configuration);
     // We need to sort the edges so the selected edge can render on top of each other
     let edges = dag.edges;
     if (selectedNode) {
@@ -197,10 +224,30 @@ const DAGSVGComponent = (props) => {
         }
         edges = other.concat(last);
     }
+    const errors = [];
     return (React.createElement("svg", { version: "1.1", xmlns: "http://www.w3.org/2000/svg", ref: svgRef, style: props.style || {} },
         React.createElement("g", null,
-            edges.map((e) => renderEdge(e, e.from.node.id === selectedNode || e.to.node.id === selectedNode)),
-            dag.nodes.map((n) => renderNode({ node: n, onClick: handleClick, selected: n.node.id === selectedNode, key: `${n.node.id}` })))));
+            edges.map((edge) => {
+                try {
+                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { fallbackRender: () => null }, renderEdge(edge, edge.from.node.id === selectedNode || edge.to.node.id === selectedNode)));
+                }
+                catch (e) {
+                    console.warn("[renderEdge] Unable to render edge", edge, e);
+                }
+            }),
+            dag.nodes.map((node) => {
+                try {
+                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { fallbackRender: () => null }, renderNode({
+                        node,
+                        onClick: handleClick,
+                        selected: node.node.id === selectedNode,
+                        key: `${node.node.id}`,
+                    })));
+                }
+                catch (e) {
+                    console.warn("[renderNode] Unable to render node", node, e);
+                }
+            }))));
 };
 exports.DAGSVGComponent = DAGSVGComponent;
 const NodeComponent = (props) => {

@@ -1,6 +1,7 @@
 import { COMPARISON_BINARY_OPERATORS } from "@babel/types";
 import * as React from "react";
 import * as svgPanZoom from "svg-pan-zoom";
+import { ErrorBoundary } from "react-error-boundary";
 
 export type IdType = number;
 
@@ -36,12 +37,12 @@ export const defaultConfiguration: Configuration = {
   },
 };
 
-const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
+export const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
   const r = calculateDepths(dagNodes);
   const nodes: Node[] = [];
   const idToNode: Record<IdType, Node> = {};
 
-  for (let depth = r.depth; depth > -1; depth--) {
+  for (let depth = r.depth - 1; depth > -1; depth--) {
     const dagnodes = r.depthToNodes[depth] || [];
 
     const initialRowOffset = r.maxNumberOfNodesInRow - dagnodes.length;
@@ -52,6 +53,12 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
 
       idx += idxShift;
 
+      const parents = r.idToParentIds[dagnode.id];
+      const index =
+        parents?.length > 0 && r.parentToIds[parents[0]]?.length > 0
+          ? r.parentToIds[parents[0]].indexOf(dagnode.id)
+          : 0;
+
       const n: Node = {
         depth,
         height: config.height,
@@ -59,10 +66,8 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
         x: (config.width + config.horizontalGap) * idx,
         y: (config.height + config.verticalGap) * depth,
         node: dagnode,
-        index: dagnode.parents?.length > 0 ? r.parentToIds[dagnode.parents[0]].indexOf(dagnode.id) : 0,
+        index,
       };
-
-      //TODO -  index : first parent? ^^
 
       nodes.push(n);
       idToNode[dagnode.id] = n;
@@ -78,13 +83,21 @@ const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration) => {
   return { nodes, edges };
 };
 
-const calculateMaxDepth = (node: DAGNode, idToNode: Record<IdType, DAGNode>, depth: number) => {
+const calculateMaxDepth = (
+  node: DAGNode,
+  idToNode: Record<IdType, DAGNode>,
+  idToParentIds: Record<IdType, number[]>,
+  depth: number
+) => {
   let resultDepth = depth;
-  if (node?.parents?.length > 0) {
-    for (const parent of node.parents) {
-      const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, depth + 1);
-      if (tmpDepth > resultDepth) {
-        resultDepth = tmpDepth;
+  if (node) {
+    const parents = idToParentIds[node.id];
+    if (parents?.length > 0) {
+      for (const parent of parents) {
+        const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, idToParentIds, depth + 1);
+        if (tmpDepth > resultDepth) {
+          resultDepth = tmpDepth;
+        }
       }
     }
   }
@@ -92,11 +105,12 @@ const calculateMaxDepth = (node: DAGNode, idToNode: Record<IdType, DAGNode>, dep
   return resultDepth;
 };
 
-const calculateDepths = (nodes: DAGNode[]) => {
+export const calculateDepths = (nodes: DAGNode[]) => {
   const idToNode: Record<IdType, DAGNode> = {};
   const idToDepth: Record<IdType, IdType> = {};
   const idToLeafCount: Record<IdType, number> = {};
   const idToDepthIndex: Record<IdType, number> = {};
+  const idToParentIds: Record<IdType, number[]> = {};
   const depthToNodes: Record<number, DAGNode[]> = {};
   const parentToIds: Record<IdType, IdType[]> = {};
   const edges: [DAGNode, DAGNode][] = [];
@@ -104,10 +118,17 @@ const calculateDepths = (nodes: DAGNode[]) => {
 
   for (const node of nodes) {
     idToNode[node.id] = node;
+
+    if (Array.isArray(node.parents)) {
+      //TODO : Do we want a type filter?
+      idToParentIds[node.id] = node.parents?.filter((p) => p != null && p !== undefined && typeof p === "number") || [];
+    } else {
+      idToParentIds[node.id] = [];
+    }
   }
 
   for (const node of nodes) {
-    const depth = calculateMaxDepth(node, idToNode, 0);
+    const depth = calculateMaxDepth(node, idToNode, idToParentIds, 0);
 
     for (let d = 0; d < depth + 1; d++) {
       if (depthToNodes[d] === undefined) {
@@ -124,9 +145,11 @@ const calculateDepths = (nodes: DAGNode[]) => {
       maxDepth = depth;
     }
 
-    if (node.parents?.length) {
-      for (const parent of node.parents) {
+    for (const parent of idToParentIds[node.id]) {
+      if (idToNode[parent]) {
         edges.push([node, idToNode[parent]]);
+      } else {
+        console.warn("[define-edge] Unable to find a node ", parent, "Known nodes:", Object.keys(idToNode));
       }
     }
   }
@@ -134,20 +157,27 @@ const calculateDepths = (nodes: DAGNode[]) => {
   if (nodes.length) {
     for (let depth = maxDepth; depth > -1; depth--) {
       for (const node of depthToNodes[depth]) {
-        if (node.parents?.length) {
-          for (const parent of node.parents) {
-            if (idToDepth[parent] === parent[node.id] - 1) {
-              idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
-            }
-          }
-        }
+        idToParentIds[node.id]
+          .filter((p) => idToDepth[p] === p[node.id] - 1)
+          .map((parent) => {
+            idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
+          });
       }
       if (depthToNodes[depth].length > maxNumberOfNodesInRow) {
         maxNumberOfNodesInRow = depthToNodes[depth].length;
       }
 
       if (depth > 0) {
-        //depthToNodes[depth].sort((a, b) => a.parent - b.parent || a.id - b.id);
+        depthToNodes[depth].sort((a, b) => {
+          try {
+            const ap = idToParentIds[a.id].length ? idToParentIds[a.id][0] : 0;
+            const bp = idToParentIds[b.id].length ? idToParentIds[b.id][0] : 0;
+
+            return ap - bp || a.id - b.id;
+          } catch {
+            return 0;
+          }
+        });
       }
     }
   }
@@ -170,8 +200,9 @@ const calculateDepths = (nodes: DAGNode[]) => {
     idToDepth,
     edges,
     idToDepthIndex,
+    idToParentIds,
     depthToNodes,
-    depth: maxDepth,
+    depth: maxDepth + 1,
     idToLeafCount,
   };
 };
@@ -222,7 +253,7 @@ export const DAGSVGComponent = (props: {
     //   .translate(-relativePoint.x, -relativePoint.y);
   }, []);
 
-  const renderNode = props.renderNode ? props.renderNode : (x: NodeComponentProps) => <NodeComponent {...x} />;
+  const renderNode = props.renderNode ? props.renderNode : (node: NodeComponentProps) => <NodeComponent {...node} />;
   const renderEdge = props.renderEdge
     ? props.renderEdge
     : (edge: Edge) => (
@@ -268,14 +299,38 @@ export const DAGSVGComponent = (props: {
     }
     edges = other.concat(last);
   }
+  const errors = [];
 
   return (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
       <g>
-        {edges.map((e) => renderEdge(e, e.from.node.id === selectedNode || e.to.node.id === selectedNode))}
-        {dag.nodes.map((n) =>
-          renderNode({ node: n, onClick: handleClick, selected: n.node.id === selectedNode, key: `${n.node.id}` })
-        )}
+        {edges.map((edge) => {
+          try {
+            return (
+              <ErrorBoundary fallbackRender={() => null}>
+                {renderEdge(edge, edge.from.node.id === selectedNode || edge.to.node.id === selectedNode)}
+              </ErrorBoundary>
+            );
+          } catch (e) {
+            console.warn("[renderEdge] Unable to render edge", edge, e);
+          }
+        })}
+        {dag.nodes.map((node) => {
+          try {
+            return (
+              <ErrorBoundary fallbackRender={() => null}>
+                {renderNode({
+                  node,
+                  onClick: handleClick,
+                  selected: node.node.id === selectedNode,
+                  key: `${node.node.id}`,
+                })}
+              </ErrorBoundary>
+            );
+          } catch (e) {
+            console.warn("[renderNode] Unable to render node", node, e);
+          }
+        })}
       </g>
     </svg>
   );

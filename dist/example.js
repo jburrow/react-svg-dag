@@ -6,7 +6,7 @@ const react_dom_1 = require("react-dom");
 const React = require("react");
 const example_nodes_1 = require("./example-nodes");
 const ExampleApp = () => {
-    const [nodes, setNodes] = React.useState((0, example_nodes_1.randomNodes)());
+    const [nodes, setNodes] = React.useState(example_nodes_1.exampleDiamond);
     const [selectedNode, setSelectedNode] = React.useState();
     return (React.createElement("div", { style: { height: "100%", width: "100%", display: "flex", flexDirection: "row" } },
         React.createElement("div", { style: { lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" } }, nodes.map((node, idx) => {

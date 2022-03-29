@@ -15,6 +15,22 @@ export interface Configuration {
     panZoomOptions?: SvgPanZoom.Options;
 }
 export declare const defaultConfiguration: Configuration;
+export declare const generateNodesAndEdges: (dagNodes: DAGNode[], config: Configuration) => {
+    nodes: Node[];
+    edges: Edge[];
+};
+export declare const calculateDepths: (nodes: DAGNode[]) => {
+    parentToIds: Record<number, number[]>;
+    maxNumberOfNodesInRow: number;
+    idToNode: Record<number, DAGNode>;
+    idToDepth: Record<number, number>;
+    edges: [DAGNode, DAGNode][];
+    idToDepthIndex: Record<number, number>;
+    idToParentIds: Record<number, number[]>;
+    depthToNodes: Record<number, DAGNode[]>;
+    depth: number;
+    idToLeafCount: Record<number, number>;
+};
 export declare type DAGEdge = {
     from: IdType;
     to: IdType;

@@ -1,6 +1,6 @@
 {
   "name": "react-svg-dag",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "React simple svg dag",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,6 +17,7 @@
   "author": "James Burrow",
   "license": "MIT",
   "dependencies": {
+    "react-error-boundary": "^3.1.4",
     "svg-pan-zoom": "^3.6.1"
   },
   "devDependencies": {

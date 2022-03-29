@@ -4,7 +4,7 @@ import * as React from "react";
 import { randomNodes, exampleDiamond } from "./example-nodes";
 
 const ExampleApp = () => {
-  const [nodes, setNodes] = React.useState<DAGNode[]>(randomNodes());
+  const [nodes, setNodes] = React.useState<DAGNode[]>(exampleDiamond);
   const [selectedNode, setSelectedNode] = React.useState<Node>();
 
   return (
