@@ -31,18 +31,29 @@ const ExampleApp = () => {
           <button onClick={() => setNodes(randomNodes())}>Generate Random Nodes</button>
           <button onClick={() => setNodes(exampleDiamond)}>diamond</button>
         </div>
+        <h4>defaults</h4>
         <DAGSVGComponent
           nodes={nodes}
           style={{ height: "500px", width: "100%" }}
           onClick={setSelectedNode}
           selectedNode={selectedNode?.node.id}
         />
+        <h3>With Config</h3>
         <DAGSVGComponent
           onClick={setSelectedNode}
           selectedNode={selectedNode?.node.id}
           nodes={nodes}
           style={{ height: "1024px", width: "100%" }}
           renderNode={(x) => <NodeComponent {...x} />}
+          configuration={{
+            enablePanZoom: true,
+            edgePadding: 10,
+            height: 40,
+            horizontalGap: 10,
+            verticalGap: 10,
+            width: 40,
+            panZoomOptions: {},
+          }}
           onPanZoomInit={(c) => {
             console.log("[onPanZoomInit]", c);
           }}
