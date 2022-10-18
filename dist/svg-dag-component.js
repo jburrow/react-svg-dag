@@ -11,6 +11,7 @@ exports.defaultConfiguration = {
     verticalGap: 50,
     enablePanZoom: true,
     edgePadding: 3,
+    autoCenterSelectedNode: true,
     panZoomOptions: {
         fit: true,
         minZoom: 0.25,
@@ -168,28 +169,31 @@ const calculateDepths = (nodes) => {
 exports.calculateDepths = calculateDepths;
 const DAGSVGComponent = (props) => {
     const configuration = props.configuration || exports.defaultConfiguration;
+    const [dag, setDag] = React.useState(null);
     const svgRef = React.useRef();
     const panZoomInstance = React.useRef();
     const [selectedNode, setSelectedNode] = React.useState();
     React.useEffect(() => {
-        setSelectedNode(props.selectedNode);
-    }, [props.selectedNode]);
+        if (selectedNode !== props.selectedNode) {
+            console.log("[selectedNode] prop changed", props.selectedNode, selectedNode);
+            setSelectedNode(props.selectedNode);
+        }
+    }, [props.selectedNode, selectedNode]);
+    React.useEffect(() => {
+        setDag((0, exports.generateNodesAndEdges)(props.nodes, configuration));
+    }, [props.nodes, configuration]);
+    React.useEffect(() => {
+        // We must re-order the edges based on the selected node
+        if (dag && dag.selectedNode !== selectedNode) {
+            console.log("[sortingEdges] selectedNode", selectedNode);
+            setDag({ nodes: dag.nodes, edges: sortEdges(dag.edges, selectedNode), selectedNode });
+        }
+    }, [dag, selectedNode]);
     const handleClick = React.useCallback((node) => {
         if (props.onClick) {
             props.onClick(node);
         }
         setSelectedNode(node.node.id);
-        // panZoomInstance.current?.zoomAtPoint(1, { x: node.x, y: node.y });
-        //const point = svgRef.current.createSVGPoint();
-        //const x = svgRef.current.getElementsByClassName("svg-pan-zoom_viewport");
-        //const oldCTM = (panZoomInstance.current as any).viewport.getCTM();
-        //(window as any).controller = panZoomInstance.current;
-        // relativePoint = point.matrixTransform(oldCTM.inverse()),
-        // modifier = this.svg
-        //   .createSVGMatrix()
-        //   .translate(relativePoint.x, relativePoint.y)
-        //   .scale(zoomScale)
-        //   .translate(-relativePoint.x, -relativePoint.y);
     }, []);
     const renderNode = props.renderNode ? props.renderNode : (node) => React.createElement(exports.NodeComponent, Object.assign({}, node));
     const renderEdge = props.renderEdge
@@ -198,46 +202,46 @@ const DAGSVGComponent = (props) => {
     React.useEffect(() => {
         if (svgRef.current) {
             if (props.onSVG) {
+                console.debug("[onSVG] Fired");
                 props.onSVG(svgRef.current);
             }
             if (configuration.enablePanZoom) {
                 panZoomInstance.current = svgPanZoom(svgRef.current, configuration.panZoomOptions);
                 if (props.onPanZoomInit) {
+                    console.debug("[onPanZoomInit] Fired");
                     props.onPanZoomInit(panZoomInstance.current);
                 }
             }
         }
     }, [svgRef.current]);
-    const dag = (0, exports.generateNodesAndEdges)(props.nodes, configuration);
-    // We need to sort the edges so the selected edge can render on top of each other
-    let edges = dag.edges;
-    if (selectedNode) {
-        const other = [];
-        const last = [];
-        for (const e of edges) {
-            if (e.from.node.id === selectedNode || e.to.node.id === selectedNode) {
-                last.push(e);
-            }
-            else {
-                other.push(e);
+    React.useEffect(() => {
+        if (props.selectedNode && panZoomInstance.current && configuration.autoCenterSelectedNode) {
+            const node = dag.nodes.filter((n) => n.node.id === selectedNode)[0];
+            if (node) {
+                const pan = panZoomInstance.current.getPan();
+                const sizes = panZoomInstance.current.getSizes();
+                const h = sizes.viewBox.width / 2;
+                const hh = sizes.viewBox.width / 2;
+                const x = -(node.x - h) * sizes.realZoom;
+                const y = -(node.y - hh) * sizes.realZoom;
+                //console.log("[pan to]", node.y, node.x, pan.y, pan.x, y, x, sizes);
+                panZoomInstance.current.pan({ x, y });
             }
         }
-        edges = other.concat(last);
-    }
-    const errors = [];
-    return (React.createElement("svg", { version: "1.1", xmlns: "http://www.w3.org/2000/svg", ref: svgRef, style: props.style || {} },
-        React.createElement("g", null,
-            edges.map((edge) => {
+    }, [dag, selectedNode, configuration]);
+    return (dag && (React.createElement("svg", { version: "1.1", xmlns: "http://www.w3.org/2000/svg", ref: svgRef, style: props.style || {} },
+        React.createElement("g", null, dag === null || dag === void 0 ? void 0 :
+            dag.edges.map((edge, idx) => {
                 try {
-                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { fallbackRender: () => null }, renderEdge(edge, edge.from.node.id === selectedNode || edge.to.node.id === selectedNode)));
+                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderEdge(edge, edge.from.node.id === selectedNode || edge.to.node.id === selectedNode)));
                 }
                 catch (e) {
                     console.warn("[renderEdge] Unable to render edge", edge, e);
                 }
-            }),
-            dag.nodes.map((node) => {
+            }), dag === null || dag === void 0 ? void 0 :
+            dag.nodes.map((node, idx) => {
                 try {
-                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { fallbackRender: () => null }, renderNode({
+                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderNode({
                         node,
                         onClick: handleClick,
                         selected: node.node.id === selectedNode,
@@ -247,7 +251,7 @@ const DAGSVGComponent = (props) => {
                 catch (e) {
                     console.warn("[renderNode] Unable to render node", node, e);
                 }
-            }))));
+            })))));
 };
 exports.DAGSVGComponent = DAGSVGComponent;
 const NodeComponent = (props) => {
@@ -270,4 +274,21 @@ const EdgeComponent = (props) => {
     return (React.createElement("path", { d: `M ${from_x} ${from_y} V ${from_y - mid_y}  H ${to_x} L ${to_x} ${to_y}`, stroke: props.selected ? "red" : "black", fill: "transparent" }));
 };
 exports.EdgeComponent = EdgeComponent;
+function sortEdges(edges, selectedNode) {
+    // We need to sort the edges so the selected edge can render on top of each other
+    if (selectedNode) {
+        const other = [];
+        const last = [];
+        for (const e of edges) {
+            if (e.from.node.id === selectedNode || e.to.node.id === selectedNode) {
+                last.push(e);
+            }
+            else {
+                other.push(e);
+            }
+        }
+        return other.concat(last);
+    }
+    return edges;
+}
 //# sourceMappingURL=svg-dag-component.js.map

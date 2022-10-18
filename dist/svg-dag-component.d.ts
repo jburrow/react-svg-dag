@@ -13,12 +13,15 @@ export interface Configuration {
     enablePanZoom: boolean;
     edgePadding: number;
     panZoomOptions?: SvgPanZoom.Options;
+    autoCenterSelectedNode?: boolean;
 }
 export declare const defaultConfiguration: Configuration;
-export declare const generateNodesAndEdges: (dagNodes: DAGNode[], config: Configuration) => {
+interface GenerateNodesAndEdgesResult {
     nodes: Node[];
     edges: Edge[];
-};
+    selectedNode?: number;
+}
+export declare const generateNodesAndEdges: (dagNodes: DAGNode[], config: Configuration) => GenerateNodesAndEdgesResult;
 export declare const calculateDepths: (nodes: DAGNode[]) => {
     parentToIds: Record<number, number[]>;
     maxNumberOfNodesInRow: number;
@@ -73,3 +76,4 @@ export declare const EdgeComponent: (props: {
     configuration: Configuration;
     selected: boolean;
 }) => JSX.Element;
+export {};

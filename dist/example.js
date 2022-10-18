@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.renderExample = void 0;
 const index_1 = require("./index");
-const react_dom_1 = require("react-dom");
+const client_1 = require("react-dom/client");
 const React = require("react");
 const example_nodes_1 = require("./example-nodes");
 const ExampleApp = () => {
@@ -23,15 +23,27 @@ const ExampleApp = () => {
             React.createElement("div", { style: { display: "flex", flexDirection: "row" } },
                 React.createElement("button", { onClick: () => setNodes((0, example_nodes_1.randomNodes)()) }, "Generate Random Nodes"),
                 React.createElement("button", { onClick: () => setNodes(example_nodes_1.exampleDiamond) }, "diamond")),
+            React.createElement("h4", null, "defaults"),
             React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "500px", width: "100%" }, onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id }),
-            React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "1024px", width: "100%" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), onPanZoomInit: (c) => {
+            React.createElement("h3", null, "With Config"),
+            React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "1024px", width: "100%" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
+                    enablePanZoom: true,
+                    edgePadding: 10,
+                    height: 40,
+                    horizontalGap: 10,
+                    verticalGap: 10,
+                    width: 40,
+                    autoCenterSelectedNode: true,
+                    panZoomOptions: {},
+                }, onPanZoomInit: (c) => {
                     console.log("[onPanZoomInit]", c);
                 }, onSVG: (s) => {
                     console.log("[onSVG]", s);
                 } }))));
 };
 const renderExample = () => {
-    (0, react_dom_1.render)(React.createElement(ExampleApp, null), document.getElementById("out"));
+    const root = (0, client_1.createRoot)(document.getElementById("out"));
+    root.render(React.createElement(ExampleApp, null));
 };
 exports.renderExample = renderExample;
 const NodeComponent = (props) => {
