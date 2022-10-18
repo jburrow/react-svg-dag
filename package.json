@@ -31,9 +31,14 @@
     "@typescript-eslint/parser": "5.31.0",
     "@webpack-cli/serve": "^1.6.1",
     "babel-jest": "^27.5.1",
+<<<<<<< HEAD
     "eslint": "8.16.0",
+=======
+    "eslint": "^8.25.0",
+>>>>>>> 136a48f (FIX: gracefully check for prop v state on the selected node when you have 2 controls bound to each tother)
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-react": "7.29.4",
+    "eslint-plugin-react": "^7.29.4",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "jest": "^27.5.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",

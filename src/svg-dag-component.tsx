@@ -42,6 +42,7 @@ export const defaultConfiguration: Configuration = {
 interface GenerateNodesAndEdgesResult {
   nodes: Node[];
   edges: Edge[];
+  selectedNode?: number;
 }
 
 export const generateNodesAndEdges = (dagNodes: DAGNode[], config: Configuration): GenerateNodesAndEdgesResult => {
@@ -234,19 +235,21 @@ export const DAGSVGComponent = (props: {
   const [selectedNode, setSelectedNode] = React.useState<number>();
 
   React.useEffect(() => {
-    setSelectedNode(props.selectedNode);
-  }, [props.selectedNode]);
+    if (selectedNode !== props.selectedNode) {
+      console.log("[selectedNode] prop changed", props.selectedNode, selectedNode);
+      setSelectedNode(props.selectedNode);
+    }
+  }, [props.selectedNode, selectedNode]);
 
   React.useEffect(() => {
     setDag(generateNodesAndEdges(props.nodes, configuration));
   }, [props.nodes, configuration]);
 
   React.useEffect(() => {
-    if (dag) {
-      const edges = sortEdges(dag.edges, selectedNode);
-      if (edges != dag.edges) {
-        setDag({ nodes: dag.nodes, edges });
-      }
+    // We must re-order the edges based on the selected node
+    if (dag && dag.selectedNode !== selectedNode) {
+      console.log("[sortingEdges] selectedNode", selectedNode);
+      setDag({ nodes: dag.nodes, edges: sortEdges(dag.edges, selectedNode), selectedNode });
     }
   }, [dag, selectedNode]);
 
@@ -274,6 +277,7 @@ export const DAGSVGComponent = (props: {
   React.useEffect(() => {
     if (svgRef.current) {
       if (props.onSVG) {
+        console.debug("[onSVG] Fired");
         props.onSVG(svgRef.current);
       }
 
@@ -281,6 +285,7 @@ export const DAGSVGComponent = (props: {
         panZoomInstance.current = svgPanZoom(svgRef.current, configuration.panZoomOptions);
 
         if (props.onPanZoomInit) {
+          console.debug("[onPanZoomInit] Fired");
           props.onPanZoomInit(panZoomInstance.current);
         }
       }
@@ -288,8 +293,6 @@ export const DAGSVGComponent = (props: {
   }, [svgRef.current]);
 
   React.useEffect(() => {
-    console.log("[After Render]", panZoomInstance, selectedNode);
-
     if (props.selectedNode && panZoomInstance.current && configuration.autoCenterSelectedNode) {
       const node = dag.nodes.filter((n) => n.node.id === selectedNode)[0];
       if (node) {
@@ -300,7 +303,7 @@ export const DAGSVGComponent = (props: {
         const hh = sizes.viewBox.width / 2;
         const x = -(node.x - h) * sizes.realZoom;
         const y = -(node.y - hh) * sizes.realZoom;
-        console.log("[pan to]", node.y, node.x, pan.y, pan.x, y, x, sizes);
+        //console.log("[pan to]", node.y, node.x, pan.y, pan.x, y, x, sizes);
 
         panZoomInstance.current.pan({ x, y });
       }
@@ -311,7 +314,7 @@ export const DAGSVGComponent = (props: {
     dag && (
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
         <g>
-          {dag?.edges?.map((edge, idx) => {
+          {dag?.edges.map((edge, idx) => {
             try {
               return (
                 <ErrorBoundary key={idx} fallbackRender={() => null}>
@@ -322,7 +325,7 @@ export const DAGSVGComponent = (props: {
               console.warn("[renderEdge] Unable to render edge", edge, e);
             }
           })}
-          {dag?.nodes?.map((node, idx) => {
+          {dag?.nodes.map((node, idx) => {
             try {
               return (
                 <ErrorBoundary key={idx} fallbackRender={() => null}>

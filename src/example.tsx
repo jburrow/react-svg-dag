@@ -52,6 +52,7 @@ const ExampleApp = () => {
             horizontalGap: 10,
             verticalGap: 10,
             width: 40,
+            autoCenterSelectedNode: true,
             panZoomOptions: {},
           }}
           onPanZoomInit={(c) => {
