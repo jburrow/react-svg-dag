@@ -1,5 +1,5 @@
 import { DAGSVGComponent, DAGNode, Node, NodeComponentProps } from "./index";
-import { render } from "react-dom";
+import { createRoot } from "react-dom/client";
 import * as React from "react";
 import { randomNodes, exampleDiamond } from "./example-nodes";
 
@@ -68,7 +68,8 @@ const ExampleApp = () => {
 };
 
 export const renderExample = () => {
-  render(<ExampleApp />, document.getElementById("out"));
+  const root = createRoot(document.getElementById("out"));
+  root.render(<ExampleApp />);
 };
 
 const NodeComponent = (props: NodeComponentProps) => {
