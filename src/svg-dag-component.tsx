@@ -239,9 +239,12 @@ export const DAGSVGComponent = (props: {
     );
 
     const c: Configuration = { ...defaultConfiguration, ...cleanPropConfig };
-    console.log("[configuration] Merging prop.configuration", cleanPropConfig, "config:", c);
-    setConfiguration(c);
-  }, [props.configuration]);
+
+    if (JSON.stringify(c) !== JSON.stringify(configuration)) {
+      console.log("[configuration] Merging prop.configuration + updating", cleanPropConfig, "merged config:", c);
+      setConfiguration(c);
+    }
+  }, [props.configuration, configuration]);
 
   React.useEffect(() => {
     if (dag) {
