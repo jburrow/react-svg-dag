@@ -6,12 +6,12 @@ export interface DAGNode {
     parents?: IdType[];
 }
 export interface Configuration {
-    width: number;
-    height: number;
-    horizontalGap: number;
-    verticalGap: number;
-    enablePanZoom: boolean;
-    edgePadding: number;
+    width?: number;
+    height?: number;
+    horizontalGap?: number;
+    verticalGap?: number;
+    enablePanZoom?: boolean;
+    edgePadding?: number;
     panZoomOptions?: SvgPanZoom.Options;
     autoCenterSelectedNode?: boolean;
 }

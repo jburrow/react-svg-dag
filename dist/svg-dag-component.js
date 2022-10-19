@@ -168,37 +168,30 @@ const calculateDepths = (nodes) => {
 };
 exports.calculateDepths = calculateDepths;
 const DAGSVGComponent = (props) => {
-    const configuration = props.configuration || exports.defaultConfiguration;
+    var _a, _b;
+    const [configuration, setConfiguration] = React.useState();
     const [dag, setDag] = React.useState(null);
     const svgRef = React.useRef();
     const panZoomInstance = React.useRef();
-    const [selectedNode, setSelectedNode] = React.useState();
     React.useEffect(() => {
-        if (selectedNode !== props.selectedNode) {
-            console.log("[selectedNode] prop changed", props.selectedNode, selectedNode);
-            setSelectedNode(props.selectedNode);
+        const cleanPropConfig = Object.fromEntries(Object.entries(props.configuration || {}).filter(([_key, value]) => value !== undefined && value !== null));
+        const c = Object.assign(Object.assign({}, cleanPropConfig), exports.defaultConfiguration);
+        console.log("[configuration] Merging prop.configuration", cleanPropConfig, "config:", c);
+        setConfiguration(c);
+    }, [props.configuration]);
+    React.useEffect(() => {
+        if (dag) {
+            if (dag.selectedNode !== props.selectedNode) {
+                console.log("[selectedNode] prop changed", props.selectedNode, dag === null || dag === void 0 ? void 0 : dag.selectedNode);
+                setSelectedNodeAndSortEdges(dag, props.selectedNode);
+            }
         }
-    }, [props.selectedNode, selectedNode]);
+    }, [props.selectedNode, dag]);
     React.useEffect(() => {
-        setDag((0, exports.generateNodesAndEdges)(props.nodes, configuration));
+        if (configuration) {
+            setDag((0, exports.generateNodesAndEdges)(props.nodes, configuration));
+        }
     }, [props.nodes, configuration]);
-    React.useEffect(() => {
-        // We must re-order the edges based on the selected node
-        if (dag && dag.selectedNode !== selectedNode) {
-            console.log("[sortingEdges] selectedNode", selectedNode);
-            setDag({ nodes: dag.nodes, edges: sortEdges(dag.edges, selectedNode), selectedNode });
-        }
-    }, [dag, selectedNode]);
-    const handleClick = React.useCallback((node) => {
-        if (props.onClick) {
-            props.onClick(node);
-        }
-        setSelectedNode(node.node.id);
-    }, []);
-    const renderNode = props.renderNode ? props.renderNode : (node) => React.createElement(exports.NodeComponent, Object.assign({}, node));
-    const renderEdge = props.renderEdge
-        ? props.renderEdge
-        : (edge) => (React.createElement(exports.EdgeComponent, { from: edge.from, to: edge.to, key: `${edge.from.node.id}-${edge.to.node.id}`, configuration: configuration, selected: selectedNode === edge.from.node.id || selectedNode === edge.to.node.id }));
     React.useEffect(() => {
         if (svgRef.current) {
             if (props.onSVG) {
@@ -215,36 +208,49 @@ const DAGSVGComponent = (props) => {
         }
     }, [svgRef.current]);
     React.useEffect(() => {
-        if (props.selectedNode && panZoomInstance.current && configuration.autoCenterSelectedNode) {
-            const node = dag.nodes.filter((n) => n.node.id === selectedNode)[0];
+        var _a;
+        if ((dag === null || dag === void 0 ? void 0 : dag.selectedNode) && panZoomInstance.current && configuration.autoCenterSelectedNode) {
+            const node = (_a = dag.nodes) === null || _a === void 0 ? void 0 : _a.filter((n) => n.node.id === dag.selectedNode)[0];
             if (node) {
-                const pan = panZoomInstance.current.getPan();
                 const sizes = panZoomInstance.current.getSizes();
-                const h = sizes.viewBox.width / 2;
-                const hh = sizes.viewBox.width / 2;
-                const x = -(node.x - h) * sizes.realZoom;
-                const y = -(node.y - hh) * sizes.realZoom;
+                const halfWidth = sizes.viewBox.width / 2;
+                const halfHeight = sizes.viewBox.height / 2;
+                const x = -(node.x - halfWidth) * sizes.realZoom;
+                const y = -(node.y - halfHeight) * sizes.realZoom;
                 //console.log("[pan to]", node.y, node.x, pan.y, pan.x, y, x, sizes);
                 panZoomInstance.current.pan({ x, y });
             }
         }
-    }, [dag, selectedNode, configuration]);
+    }, [dag, configuration]);
+    const handleClick = React.useCallback((node) => {
+        if (props.onClick) {
+            props.onClick(node);
+        }
+        setSelectedNodeAndSortEdges(dag, node.node.id);
+    }, [dag]);
+    const setSelectedNodeAndSortEdges = (dag, sn) => {
+        setDag(Object.assign(Object.assign({}, dag), { edges: sortEdges(dag.edges, sn), selectedNode: sn }));
+    };
+    const renderNode = props.renderNode ? props.renderNode : (node) => React.createElement(exports.NodeComponent, Object.assign({}, node));
+    const renderEdge = props.renderEdge
+        ? props.renderEdge
+        : (edge) => (React.createElement(exports.EdgeComponent, { from: edge.from, to: edge.to, key: `${edge.from.node.id}-${edge.to.node.id}`, configuration: configuration, selected: dag.selectedNode === edge.from.node.id || dag.selectedNode === edge.to.node.id }));
     return (dag && (React.createElement("svg", { version: "1.1", xmlns: "http://www.w3.org/2000/svg", ref: svgRef, style: props.style || {} },
-        React.createElement("g", null, dag === null || dag === void 0 ? void 0 :
-            dag.edges.map((edge, idx) => {
+        React.createElement("g", null, (_a = dag === null || dag === void 0 ? void 0 : dag.edges) === null || _a === void 0 ? void 0 :
+            _a.map((edge, idx) => {
                 try {
-                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderEdge(edge, edge.from.node.id === selectedNode || edge.to.node.id === selectedNode)));
+                    return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderEdge(edge, edge.from.node.id === dag.selectedNode || edge.to.node.id === dag.selectedNode)));
                 }
                 catch (e) {
                     console.warn("[renderEdge] Unable to render edge", edge, e);
                 }
-            }), dag === null || dag === void 0 ? void 0 :
-            dag.nodes.map((node, idx) => {
+            }), (_b = dag === null || dag === void 0 ? void 0 : dag.nodes) === null || _b === void 0 ? void 0 :
+            _b.map((node, idx) => {
                 try {
                     return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderNode({
                         node,
                         onClick: handleClick,
-                        selected: node.node.id === selectedNode,
+                        selected: node.node.id === dag.selectedNode,
                         key: `${node.node.id}`,
                     })));
                 }

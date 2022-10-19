@@ -46,13 +46,11 @@ const ExampleApp = () => {
           style={{ height: "1024px", width: "100%" }}
           renderNode={(x) => <NodeComponent {...x} />}
           configuration={{
-            enablePanZoom: true,
             edgePadding: 10,
             height: 40,
             horizontalGap: 10,
             verticalGap: 10,
             width: 40,
-            autoCenterSelectedNode: true,
             panZoomOptions: {},
           }}
           onPanZoomInit={(c) => {

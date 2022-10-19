@@ -12,12 +12,12 @@ export interface DAGNode {
 }
 
 export interface Configuration {
-  width: number;
-  height: number;
-  horizontalGap: number;
-  verticalGap: number;
-  enablePanZoom: boolean;
-  edgePadding: number;
+  width?: number;
+  height?: number;
+  horizontalGap?: number;
+  verticalGap?: number;
+  enablePanZoom?: boolean;
+  edgePadding?: number;
   panZoomOptions?: SvgPanZoom.Options;
   autoCenterSelectedNode?: boolean;
 }
@@ -228,51 +228,35 @@ export const DAGSVGComponent = (props: {
   onClick?(node: Node): void;
   selectedNode?: IdType;
 }) => {
-  const configuration = props.configuration || defaultConfiguration;
+  const [configuration, setConfiguration] = React.useState<Configuration>();
   const [dag, setDag] = React.useState<GenerateNodesAndEdgesResult>(null);
   const svgRef = React.useRef<SVGSVGElement>();
   const panZoomInstance = React.useRef<SvgPanZoom.Instance>();
-  const [selectedNode, setSelectedNode] = React.useState<number>();
 
   React.useEffect(() => {
-    if (selectedNode !== props.selectedNode) {
-      console.log("[selectedNode] prop changed", props.selectedNode, selectedNode);
-      setSelectedNode(props.selectedNode);
+    const cleanPropConfig = Object.fromEntries(
+      Object.entries(props.configuration || {}).filter(([_key, value]) => value !== undefined && value !== null)
+    );
+
+    const c: Configuration = { ...cleanPropConfig, ...defaultConfiguration };
+    console.log("[configuration] Merging prop.configuration", cleanPropConfig, "config:", c);
+    setConfiguration(c);
+  }, [props.configuration]);
+
+  React.useEffect(() => {
+    if (dag) {
+      if (dag.selectedNode !== props.selectedNode) {
+        console.log("[selectedNode] prop changed", props.selectedNode, dag?.selectedNode);
+        setSelectedNodeAndSortEdges(dag, props.selectedNode);
+      }
     }
-  }, [props.selectedNode, selectedNode]);
+  }, [props.selectedNode, dag]);
 
   React.useEffect(() => {
-    setDag(generateNodesAndEdges(props.nodes, configuration));
+    if (configuration) {
+      setDag(generateNodesAndEdges(props.nodes, configuration));
+    }
   }, [props.nodes, configuration]);
-
-  React.useEffect(() => {
-    // We must re-order the edges based on the selected node
-    if (dag && dag.selectedNode !== selectedNode) {
-      console.log("[sortingEdges] selectedNode", selectedNode);
-      setDag({ nodes: dag.nodes, edges: sortEdges(dag.edges, selectedNode), selectedNode });
-    }
-  }, [dag, selectedNode]);
-
-  const handleClick = React.useCallback((node: Node) => {
-    if (props.onClick) {
-      props.onClick(node);
-    }
-
-    setSelectedNode(node.node.id);
-  }, []);
-
-  const renderNode = props.renderNode ? props.renderNode : (node: NodeComponentProps) => <NodeComponent {...node} />;
-  const renderEdge = props.renderEdge
-    ? props.renderEdge
-    : (edge: Edge) => (
-        <EdgeComponent
-          from={edge.from}
-          to={edge.to}
-          key={`${edge.from.node.id}-${edge.to.node.id}`}
-          configuration={configuration}
-          selected={selectedNode === edge.from.node.id || selectedNode === edge.to.node.id}
-        />
-      );
 
   React.useEffect(() => {
     if (svgRef.current) {
@@ -293,46 +277,72 @@ export const DAGSVGComponent = (props: {
   }, [svgRef.current]);
 
   React.useEffect(() => {
-    if (props.selectedNode && panZoomInstance.current && configuration.autoCenterSelectedNode) {
-      const node = dag.nodes.filter((n) => n.node.id === selectedNode)[0];
+    if (dag?.selectedNode && panZoomInstance.current && configuration.autoCenterSelectedNode) {
+      const node = dag.nodes?.filter((n) => n.node.id === dag.selectedNode)[0];
       if (node) {
-        const pan = panZoomInstance.current.getPan();
         const sizes = panZoomInstance.current.getSizes();
 
-        const h = sizes.viewBox.width / 2;
-        const hh = sizes.viewBox.width / 2;
-        const x = -(node.x - h) * sizes.realZoom;
-        const y = -(node.y - hh) * sizes.realZoom;
+        const halfWidth = sizes.viewBox.width / 2;
+        const halfHeight = sizes.viewBox.height / 2;
+        const x = -(node.x - halfWidth) * sizes.realZoom;
+        const y = -(node.y - halfHeight) * sizes.realZoom;
         //console.log("[pan to]", node.y, node.x, pan.y, pan.x, y, x, sizes);
 
         panZoomInstance.current.pan({ x, y });
       }
     }
-  }, [dag, selectedNode, configuration]);
+  }, [dag, configuration]);
+
+  const handleClick = React.useCallback(
+    (node: Node) => {
+      if (props.onClick) {
+        props.onClick(node);
+      }
+      setSelectedNodeAndSortEdges(dag, node.node.id);
+    },
+    [dag]
+  );
+
+  const setSelectedNodeAndSortEdges = (dag: GenerateNodesAndEdgesResult, sn: number | null) => {
+    setDag({ ...dag, edges: sortEdges(dag.edges, sn), selectedNode: sn });
+  };
+
+  const renderNode = props.renderNode ? props.renderNode : (node: NodeComponentProps) => <NodeComponent {...node} />;
+  const renderEdge = props.renderEdge
+    ? props.renderEdge
+    : (edge: Edge) => (
+        <EdgeComponent
+          from={edge.from}
+          to={edge.to}
+          key={`${edge.from.node.id}-${edge.to.node.id}`}
+          configuration={configuration}
+          selected={dag.selectedNode === edge.from.node.id || dag.selectedNode === edge.to.node.id}
+        />
+      );
 
   return (
     dag && (
       <svg version="1.1" xmlns="http://www.w3.org/2000/svg" ref={svgRef} style={props.style || {}}>
         <g>
-          {dag?.edges.map((edge, idx) => {
+          {dag?.edges?.map((edge, idx) => {
             try {
               return (
                 <ErrorBoundary key={idx} fallbackRender={() => null}>
-                  {renderEdge(edge, edge.from.node.id === selectedNode || edge.to.node.id === selectedNode)}
+                  {renderEdge(edge, edge.from.node.id === dag.selectedNode || edge.to.node.id === dag.selectedNode)}
                 </ErrorBoundary>
               );
             } catch (e) {
               console.warn("[renderEdge] Unable to render edge", edge, e);
             }
           })}
-          {dag?.nodes.map((node, idx) => {
+          {dag?.nodes?.map((node, idx) => {
             try {
               return (
                 <ErrorBoundary key={idx} fallbackRender={() => null}>
                   {renderNode({
                     node,
                     onClick: handleClick,
-                    selected: node.node.id === selectedNode,
+                    selected: node.node.id === dag.selectedNode,
                     key: `${node.node.id}`,
                   })}
                 </ErrorBoundary>

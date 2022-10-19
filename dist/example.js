@@ -27,13 +27,11 @@ const ExampleApp = () => {
             React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "500px", width: "100%" }, onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id }),
             React.createElement("h3", null, "With Config"),
             React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "1024px", width: "100%" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
-                    enablePanZoom: true,
                     edgePadding: 10,
                     height: 40,
                     horizontalGap: 10,
                     verticalGap: 10,
                     width: 40,
-                    autoCenterSelectedNode: true,
                     panZoomOptions: {},
                 }, onPanZoomInit: (c) => {
                     console.log("[onPanZoomInit]", c);
