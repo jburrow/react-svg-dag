@@ -238,7 +238,7 @@ export const DAGSVGComponent = (props: {
       Object.entries(props.configuration || {}).filter(([_key, value]) => value !== undefined && value !== null)
     );
 
-    const c: Configuration = { ...cleanPropConfig, ...defaultConfiguration };
+    const c: Configuration = { ...defaultConfiguration, ...cleanPropConfig };
     console.log("[configuration] Merging prop.configuration", cleanPropConfig, "config:", c);
     setConfiguration(c);
   }, [props.configuration]);

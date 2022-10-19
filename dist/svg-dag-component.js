@@ -175,7 +175,7 @@ const DAGSVGComponent = (props) => {
     const panZoomInstance = React.useRef();
     React.useEffect(() => {
         const cleanPropConfig = Object.fromEntries(Object.entries(props.configuration || {}).filter(([_key, value]) => value !== undefined && value !== null));
-        const c = Object.assign(Object.assign({}, cleanPropConfig), exports.defaultConfiguration);
+        const c = Object.assign(Object.assign({}, exports.defaultConfiguration), cleanPropConfig);
         console.log("[configuration] Merging prop.configuration", cleanPropConfig, "config:", c);
         setConfiguration(c);
     }, [props.configuration]);
