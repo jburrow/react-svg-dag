@@ -12,6 +12,7 @@ exports.defaultConfiguration = {
     enablePanZoom: true,
     edgePadding: 3,
     autoCenterSelectedNode: true,
+    autoSelectNode: true,
     panZoomOptions: {
         fit: true,
         minZoom: 0.25,
@@ -176,12 +177,18 @@ const DAGSVGComponent = (props) => {
     React.useEffect(() => {
         const cleanPropConfig = Object.fromEntries(Object.entries(props.configuration || {}).filter(([_key, value]) => value !== undefined && value !== null));
         const c = Object.assign(Object.assign({}, exports.defaultConfiguration), cleanPropConfig);
-        console.log("[configuration] Merging prop.configuration", cleanPropConfig, "config:", c);
-        setConfiguration(c);
-    }, [props.configuration]);
+        if (JSON.stringify(c) !== JSON.stringify(configuration)) {
+            console.log("[configuration] Merging prop.configuration + updating", cleanPropConfig, "merged config:", c);
+            setConfiguration(c);
+        }
+    }, [props.configuration, configuration]);
     React.useEffect(() => {
         if (dag) {
-            if (dag.selectedNode !== props.selectedNode) {
+            if (dag.selectedNode == null) {
+                console.log("[selectedNode] defaulting to first", dag.selectedNode);
+                setSelectedNodeAndSortEdges(dag, dag.nodes[dag.nodes.length - 1].node.id);
+            }
+            else if (props.selectedNode && dag.selectedNode !== props.selectedNode) {
                 console.log("[selectedNode] prop changed", props.selectedNode, dag === null || dag === void 0 ? void 0 : dag.selectedNode);
                 setSelectedNodeAndSortEdges(dag, props.selectedNode);
             }
@@ -189,6 +196,7 @@ const DAGSVGComponent = (props) => {
     }, [props.selectedNode, dag]);
     React.useEffect(() => {
         if (configuration) {
+            console.log("[calculate-dag]");
             setDag((0, exports.generateNodesAndEdges)(props.nodes, configuration));
         }
     }, [props.nodes, configuration]);

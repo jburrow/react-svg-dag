@@ -20,6 +20,7 @@ export interface Configuration {
   edgePadding?: number;
   panZoomOptions?: SvgPanZoom.Options;
   autoCenterSelectedNode?: boolean;
+  autoSelectNode?: boolean;
 }
 
 export const defaultConfiguration: Configuration = {
@@ -30,6 +31,7 @@ export const defaultConfiguration: Configuration = {
   enablePanZoom: true,
   edgePadding: 3,
   autoCenterSelectedNode: true,
+  autoSelectNode: true,
   panZoomOptions: {
     fit: true,
     minZoom: 0.25,
@@ -248,7 +250,10 @@ export const DAGSVGComponent = (props: {
 
   React.useEffect(() => {
     if (dag) {
-      if (dag.selectedNode !== props.selectedNode) {
+      if (dag.selectedNode == null) {
+        console.log("[selectedNode] defaulting to first", dag.selectedNode);
+        setSelectedNodeAndSortEdges(dag, dag.nodes[dag.nodes.length - 1].node.id);
+      } else if (props.selectedNode && dag.selectedNode !== props.selectedNode) {
         console.log("[selectedNode] prop changed", props.selectedNode, dag?.selectedNode);
         setSelectedNodeAndSortEdges(dag, props.selectedNode);
       }
@@ -257,6 +262,7 @@ export const DAGSVGComponent = (props: {
 
   React.useEffect(() => {
     if (configuration) {
+      console.log("[calculate-dag]");
       setDag(generateNodesAndEdges(props.nodes, configuration));
     }
   }, [props.nodes, configuration]);

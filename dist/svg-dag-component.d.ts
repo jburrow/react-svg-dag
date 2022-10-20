@@ -14,6 +14,7 @@ export interface Configuration {
     edgePadding?: number;
     panZoomOptions?: SvgPanZoom.Options;
     autoCenterSelectedNode?: boolean;
+    autoSelectNode?: boolean;
 }
 export declare const defaultConfiguration: Configuration;
 interface GenerateNodesAndEdgesResult {
