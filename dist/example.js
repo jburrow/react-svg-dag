@@ -9,7 +9,7 @@ const ExampleApp = () => {
     const [nodes, setNodes] = React.useState(example_nodes_1.exampleDiamond);
     const [selectedNode, setSelectedNode] = React.useState();
     return (React.createElement("div", { style: { height: "100%", width: "100%", display: "flex", flexDirection: "row" } },
-        React.createElement("div", { style: { lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" } }, nodes.map((node, idx) => {
+        React.createElement("div", { style: { lineHeight: "10px", fontSize: 10, fontFamily: "Consolas", width: 200 } }, nodes.map((node, idx) => {
             var _a, _b, _c;
             return (React.createElement("pre", { key: idx, style: {
                     color: node.id === ((_a = selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node) === null || _a === void 0 ? void 0 : _a.id)
@@ -19,25 +19,23 @@ const ExampleApp = () => {
                             : "grey",
                 } }, JSON.stringify(node, null, 2)));
         })),
-        React.createElement("div", { style: { display: "flex", flexDirection: "column", height: "100%", width: "100%" } },
-            React.createElement("div", { style: { display: "flex", flexDirection: "row" } },
-                React.createElement("button", { onClick: () => setNodes((0, example_nodes_1.randomNodes)()) }, "Generate Random Nodes"),
-                React.createElement("button", { onClick: () => setNodes(example_nodes_1.exampleDiamond) }, "diamond")),
-            React.createElement("h4", null, "defaults"),
-            React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "500px", width: "100%" }, onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id }),
-            React.createElement("h3", null, "With Config"),
-            React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "1024px", width: "100%" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
-                    edgePadding: 10,
-                    height: 40,
-                    horizontalGap: 10,
-                    verticalGap: 10,
-                    width: 40,
-                    panZoomOptions: {},
-                }, onPanZoomInit: (c) => {
-                    console.log("[onPanZoomInit]", c);
-                }, onSVG: (s) => {
-                    console.log("[onSVG]", s);
-                } }))));
+        React.createElement("div", { style: { display: "flex", flexDirection: "row", height: "100%", width: "calc(100% - 200px)", gap: 5 } },
+            React.createElement("div", null,
+                React.createElement("h3", null, "defaults"),
+                React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "500px", width: "500px", border: "1px solid black" }, onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id })),
+            React.createElement("div", null,
+                React.createElement("h3", null, "With Config"),
+                React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "500px", width: "500px", border: "1px solid black" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
+                        edgePadding: 10,
+                        height: 40,
+                        horizontalGap: 10,
+                        verticalGap: 10,
+                        width: 40,
+                    }, onPanZoomInit: (c) => {
+                        console.log("[onPanZoomInit]", c);
+                    }, onSVG: (s) => {
+                        console.log("[onSVG]", s);
+                    } })))));
 };
 const renderExample = () => {
     const root = (0, client_1.createRoot)(document.getElementById("out"));

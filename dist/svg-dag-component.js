@@ -74,7 +74,7 @@ const calculateMaxDepth = (node, idToNode, idToParentIds, depth) => {
     return resultDepth;
 };
 const calculateDepths = (nodes) => {
-    var _a, _b;
+    var _a;
     const idToNode = {};
     const idToDepth = {};
     const idToLeafCount = {};
@@ -87,11 +87,17 @@ const calculateDepths = (nodes) => {
     for (const node of nodes) {
         idToNode[node.id] = node;
         if (Array.isArray(node.parents)) {
-            //TODO : Do we want a type filter?
-            idToParentIds[node.id] = ((_a = node.parents) === null || _a === void 0 ? void 0 : _a.filter((p) => p != null && p !== undefined && typeof p === "number")) || [];
+            idToParentIds[node.id] = ((_a = node.parents) === null || _a === void 0 ? void 0 : _a.filter((p) => p != null && p != undefined && typeof p === "number")) || [];
         }
         else {
             idToParentIds[node.id] = [];
+        }
+    }
+    for (const node of nodes) {
+        const afterFilter = idToParentIds[node.id].filter((p) => idToNode[p]);
+        if (afterFilter.length !== idToParentIds[node.id].length) {
+            console.warn(`[discarded-invalid-parents] ${node.id} had invalid parent-ids filtered ${idToParentIds[node.id]} => ${afterFilter}`);
+            idToParentIds[node.id] = afterFilter;
         }
     }
     for (const node of nodes) {
@@ -145,13 +151,11 @@ const calculateDepths = (nodes) => {
         }
     }
     for (const node of nodes) {
-        if ((_b = node.parents) === null || _b === void 0 ? void 0 : _b.length) {
-            for (const parentId of node.parents) {
-                if (!parentToIds[parentId]) {
-                    parentToIds[parentId] = [];
-                }
-                parentToIds[parentId].push(node.id);
+        for (const parentId of idToParentIds[node.id]) {
+            if (!parentToIds[parentId]) {
+                parentToIds[parentId] = [];
             }
+            parentToIds[parentId].push(node.id);
         }
     }
     return {
@@ -184,7 +188,7 @@ const DAGSVGComponent = (props) => {
     }, [props.configuration, configuration]);
     React.useEffect(() => {
         if (dag) {
-            if (dag.selectedNode == null) {
+            if (dag.selectedNode == null && configuration.autoSelectNode && dag.nodes.length) {
                 console.log("[selectedNode] defaulting to first", dag.selectedNode);
                 setSelectedNodeAndSortEdges(dag, dag.nodes[dag.nodes.length - 1].node.id);
             }
@@ -193,7 +197,7 @@ const DAGSVGComponent = (props) => {
                 setSelectedNodeAndSortEdges(dag, props.selectedNode);
             }
         }
-    }, [props.selectedNode, dag]);
+    }, [props.selectedNode, dag, configuration]);
     React.useEffect(() => {
         if (configuration) {
             console.log("[calculate-dag]");
