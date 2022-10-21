@@ -6,6 +6,7 @@ import { calculateDepths } from "./svg-dag-component";
 import * as React from "react";
 
 import { create } from "react-test-renderer";
+import { expect } from "@jest/globals";
 
 test("calculateDepths - no parents set", () => {
   const result = calculateDepths([{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }]);

@@ -1,6 +1,6 @@
 {
   "name": "react-svg-dag",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "React simple svg dag",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,7 +14,9 @@
     "compile": "tsc && webpack --mode=production && typedoc --out ./docs ./src/index.ts",
     "tsc": "tsc --watch",
     "doc": "typedoc --out ./docs ./src/index.ts",
-    "test": "jest --coverage"
+    "unit-test": "jest --coverage",
+    "integration-test": "cypress run --component",
+    "test": "concurrently \"npm run unit-test\" \"npm run integration-test\""
   },
   "author": "James Burrow",
   "license": "MIT",
@@ -37,6 +39,8 @@
     "@typescript-eslint/parser": "5.40.1",
     "@webpack-cli/serve": "1.7.0",
     "babel-jest": "29.2.1",
+    "concurrently": "^7.4.0",
+    "cypress": "^10.10.0",
     "eslint": "8.25.0",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-react": "7.31.10",

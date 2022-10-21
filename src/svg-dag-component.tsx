@@ -138,6 +138,18 @@ export const calculateDepths = (nodes: DAGNode[]) => {
   }
 
   for (const node of nodes) {
+    const afterFilter = idToParentIds[node.id].filter((p) => idToNode[p]);
+    if (afterFilter.length !== idToParentIds[node.id].length) {
+      console.warn(
+        `[discarded-invalid-parents] ${node.id} had invalid parent-ids filtered ${
+          idToParentIds[node.id]
+        } => ${afterFilter}`
+      );
+      idToParentIds[node.id] = afterFilter;
+    }
+  }
+
+  for (const node of nodes) {
     const depth = calculateMaxDepth(node, idToNode, idToParentIds, 0);
 
     for (let d = 0; d < depth + 1; d++) {
@@ -193,13 +205,11 @@ export const calculateDepths = (nodes: DAGNode[]) => {
   }
 
   for (const node of nodes) {
-    if (node.parents?.length) {
-      for (const parentId of node.parents) {
-        if (!parentToIds[parentId]) {
-          parentToIds[parentId] = [];
-        }
-        parentToIds[parentId].push(node.id);
+    for (const parentId of idToParentIds[node.id]) {
+      if (!parentToIds[parentId]) {
+        parentToIds[parentId] = [];
       }
+      parentToIds[parentId].push(node.id);
     }
   }
 
@@ -250,7 +260,7 @@ export const DAGSVGComponent = (props: {
 
   React.useEffect(() => {
     if (dag) {
-      if (dag.selectedNode == null) {
+      if (dag.selectedNode == null && configuration.autoSelectNode && dag.nodes.length) {
         console.log("[selectedNode] defaulting to first", dag.selectedNode);
         setSelectedNodeAndSortEdges(dag, dag.nodes[dag.nodes.length - 1].node.id);
       } else if (props.selectedNode && dag.selectedNode !== props.selectedNode) {
@@ -258,7 +268,7 @@ export const DAGSVGComponent = (props: {
         setSelectedNodeAndSortEdges(dag, props.selectedNode);
       }
     }
-  }, [props.selectedNode, dag]);
+  }, [props.selectedNode, dag, configuration]);
 
   React.useEffect(() => {
     if (configuration) {

@@ -9,7 +9,7 @@ const ExampleApp = () => {
 
   return (
     <div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "row" }}>
-      <div style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas" }}>
+      <div style={{ lineHeight: "10px", fontSize: 10, fontFamily: "Consolas", width: 200 }}>
         {nodes.map((node, idx) => (
           <pre
             key={idx}
@@ -26,40 +26,39 @@ const ExampleApp = () => {
           </pre>
         ))}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
-        <div style={{ display: "flex", flexDirection: "row" }}>
-          <button onClick={() => setNodes(randomNodes())}>Generate Random Nodes</button>
-          <button onClick={() => setNodes(exampleDiamond)}>diamond</button>
+      <div style={{ display: "flex", flexDirection: "row", height: "100%", width: "calc(100% - 200px)", gap: 5 }}>
+        <div>
+          <h3>defaults</h3>
+          <DAGSVGComponent
+            nodes={nodes}
+            style={{ height: "500px", width: "500px", border: "1px solid black" }}
+            onClick={setSelectedNode}
+            selectedNode={selectedNode?.node.id}
+          />
         </div>
-        <h4>defaults</h4>
-        <DAGSVGComponent
-          nodes={nodes}
-          style={{ height: "500px", width: "100%" }}
-          onClick={setSelectedNode}
-          selectedNode={selectedNode?.node.id}
-        />
-        <h3>With Config</h3>
-        <DAGSVGComponent
-          onClick={setSelectedNode}
-          selectedNode={selectedNode?.node.id}
-          nodes={nodes}
-          style={{ height: "1024px", width: "100%" }}
-          renderNode={(x) => <NodeComponent {...x} />}
-          configuration={{
-            edgePadding: 10,
-            height: 40,
-            horizontalGap: 10,
-            verticalGap: 10,
-            width: 40,
-            panZoomOptions: {},
-          }}
-          onPanZoomInit={(c) => {
-            console.log("[onPanZoomInit]", c);
-          }}
-          onSVG={(s) => {
-            console.log("[onSVG]", s);
-          }}
-        />
+        <div>
+          <h3>With Config</h3>
+          <DAGSVGComponent
+            onClick={setSelectedNode}
+            selectedNode={selectedNode?.node.id}
+            nodes={nodes}
+            style={{ height: "500px", width: "500px", border: "1px solid black" }}
+            renderNode={(x) => <NodeComponent {...x} />}
+            configuration={{
+              edgePadding: 10,
+              height: 40,
+              horizontalGap: 10,
+              verticalGap: 10,
+              width: 40,
+            }}
+            onPanZoomInit={(c) => {
+              console.log("[onPanZoomInit]", c);
+            }}
+            onSVG={(s) => {
+              console.log("[onSVG]", s);
+            }}
+          />
+        </div>
       </div>
     </div>
   );
