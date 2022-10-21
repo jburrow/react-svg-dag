@@ -14,9 +14,10 @@
     "compile": "tsc && webpack --mode=production && typedoc --out ./docs ./src/index.ts",
     "tsc": "tsc --watch",
     "doc": "typedoc --out ./docs ./src/index.ts",
+    "test": "jest --coverage",
     "unit-test": "jest --coverage",
     "integration-test": "cypress run --component",
-    "test": "concurrently \"npm run unit-test\" \"npm run integration-test\""
+   // "test": "concurrently \"npm run unit-test\" \"npm run integration-test\""
   },
   "author": "James Burrow",
   "license": "MIT",
