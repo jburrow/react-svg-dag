@@ -16,6 +16,7 @@ lib-cov
 
 # we don't want to dist the compiled tests
 cypress/videos
+cypress/screenshots
 
 
 # Coverage directory used by tools like istanbul
