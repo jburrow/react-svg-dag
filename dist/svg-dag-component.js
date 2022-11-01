@@ -87,7 +87,8 @@ const calculateDepths = (nodes) => {
     for (const node of nodes) {
         idToNode[node.id] = node;
         if (Array.isArray(node.parents)) {
-            idToParentIds[node.id] = ((_a = node.parents) === null || _a === void 0 ? void 0 : _a.filter((p) => p != null && p != undefined && typeof p === "number")) || [];
+            //TODO : Do we want a type filter?
+            idToParentIds[node.id] = ((_a = node.parents) === null || _a === void 0 ? void 0 : _a.filter((p) => p != null && p !== undefined && typeof p === "number")) || [];
         }
         else {
             idToParentIds[node.id] = [];
@@ -225,11 +226,11 @@ const DAGSVGComponent = (props) => {
             const node = (_a = dag.nodes) === null || _a === void 0 ? void 0 : _a.filter((n) => n.node.id === dag.selectedNode)[0];
             if (node) {
                 const sizes = panZoomInstance.current.getSizes();
-                const halfWidth = sizes.viewBox.width / 2;
-                const halfHeight = sizes.viewBox.height / 2;
+                const halfWidth = (sizes.viewBox.width / 2) + node.width / 2;
+                const halfHeight = (sizes.viewBox.height / 2) - node.height / 2;
                 const x = -(node.x - halfWidth) * sizes.realZoom;
                 const y = -(node.y - halfHeight) * sizes.realZoom;
-                //console.log("[pan to]", node.y, node.x, pan.y, pan.x, y, x, sizes);
+                //This doesn't work when you zoom!
                 panZoomInstance.current.pan({ x, y });
             }
         }

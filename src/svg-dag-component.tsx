@@ -141,8 +141,7 @@ export const calculateDepths = (nodes: DAGNode[]) => {
     const afterFilter = idToParentIds[node.id].filter((p) => idToNode[p]);
     if (afterFilter.length !== idToParentIds[node.id].length) {
       console.warn(
-        `[discarded-invalid-parents] ${node.id} had invalid parent-ids filtered ${
-          idToParentIds[node.id]
+        `[discarded-invalid-parents] ${node.id} had invalid parent-ids filtered ${idToParentIds[node.id]
         } => ${afterFilter}`
       );
       idToParentIds[node.id] = afterFilter;
@@ -301,11 +300,12 @@ export const DAGSVGComponent = (props: {
       if (node) {
         const sizes = panZoomInstance.current.getSizes();
 
-        const halfWidth = sizes.viewBox.width / 2;
-        const halfHeight = sizes.viewBox.height / 2;
-        const x = -(node.x - halfWidth) * sizes.realZoom;
+        const halfWidth = (sizes.viewBox.width / 2) + node.width / 2;
+        const halfHeight = (sizes.viewBox.height / 2) - node.height / 2;
+
+        const x = -(node.x - halfWidth) * sizes.realZoom
         const y = -(node.y - halfHeight) * sizes.realZoom;
-        //console.log("[pan to]", node.y, node.x, pan.y, pan.x, y, x, sizes);
+        //This doesn't work when you zoom!
 
         panZoomInstance.current.pan({ x, y });
       }
@@ -330,14 +330,14 @@ export const DAGSVGComponent = (props: {
   const renderEdge = props.renderEdge
     ? props.renderEdge
     : (edge: Edge) => (
-        <EdgeComponent
-          from={edge.from}
-          to={edge.to}
-          key={`${edge.from.node.id}-${edge.to.node.id}`}
-          configuration={configuration}
-          selected={dag.selectedNode === edge.from.node.id || dag.selectedNode === edge.to.node.id}
-        />
-      );
+      <EdgeComponent
+        from={edge.from}
+        to={edge.to}
+        key={`${edge.from.node.id}-${edge.to.node.id}`}
+        configuration={configuration}
+        selected={dag.selectedNode === edge.from.node.id || dag.selectedNode === edge.to.node.id}
+      />
+    );
 
   return (
     dag && (
