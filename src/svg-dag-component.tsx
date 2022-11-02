@@ -1,7 +1,9 @@
-import { COMPARISON_BINARY_OPERATORS } from "@babel/types";
 import * as React from "react";
 import * as svgPanZoom from "svg-pan-zoom";
 import { ErrorBoundary } from "react-error-boundary";
+import * as debug from "debug";
+
+const logger = debug('react-svg-dag')
 
 export type IdType = number;
 
@@ -140,7 +142,7 @@ export const calculateDepths = (nodes: DAGNode[]) => {
   for (const node of nodes) {
     const afterFilter = idToParentIds[node.id].filter((p) => idToNode[p]);
     if (afterFilter.length !== idToParentIds[node.id].length) {
-      console.warn(
+      logger(
         `[discarded-invalid-parents] ${node.id} had invalid parent-ids filtered ${idToParentIds[node.id]
         } => ${afterFilter}`
       );
@@ -170,7 +172,7 @@ export const calculateDepths = (nodes: DAGNode[]) => {
       if (idToNode[parent]) {
         edges.push([node, idToNode[parent]]);
       } else {
-        console.warn("[define-edge] Unable to find a node ", parent, "Known nodes:", Object.keys(idToNode));
+        logger("[define-edge] Unable to find a node ", parent, "Known nodes:", Object.keys(idToNode));
       }
     }
   }
@@ -252,7 +254,7 @@ export const DAGSVGComponent = (props: {
     const c: Configuration = { ...defaultConfiguration, ...cleanPropConfig };
 
     if (JSON.stringify(c) !== JSON.stringify(configuration)) {
-      console.log("[configuration] Merging prop.configuration + updating", cleanPropConfig, "merged config:", c);
+      logger("[configuration] Merging prop.configuration + updating", cleanPropConfig, "merged config:", c);
       setConfiguration(c);
     }
   }, [props.configuration, configuration]);
@@ -260,10 +262,10 @@ export const DAGSVGComponent = (props: {
   React.useEffect(() => {
     if (dag) {
       if (dag.selectedNode == null && configuration.autoSelectNode && dag.nodes.length) {
-        console.log("[selectedNode] defaulting to first", dag.selectedNode);
+        logger("[selectedNode] defaulting to first", dag.selectedNode);
         setSelectedNodeAndSortEdges(dag, dag.nodes[dag.nodes.length - 1].node.id);
       } else if (props.selectedNode && dag.selectedNode !== props.selectedNode) {
-        console.log("[selectedNode] prop changed", props.selectedNode, dag?.selectedNode);
+        logger("[selectedNode] prop changed", props.selectedNode, dag?.selectedNode);
         setSelectedNodeAndSortEdges(dag, props.selectedNode);
       }
     }
@@ -271,7 +273,7 @@ export const DAGSVGComponent = (props: {
 
   React.useEffect(() => {
     if (configuration) {
-      console.log("[calculate-dag]");
+      logger("[calculate-dag]");
       setDag(generateNodesAndEdges(props.nodes, configuration));
     }
   }, [props.nodes, configuration]);
@@ -279,7 +281,7 @@ export const DAGSVGComponent = (props: {
   React.useEffect(() => {
     if (svgRef.current) {
       if (props.onSVG) {
-        console.debug("[onSVG] Fired");
+        logger("[onSVG] Fired");
         props.onSVG(svgRef.current);
       }
 
@@ -287,7 +289,7 @@ export const DAGSVGComponent = (props: {
         panZoomInstance.current = svgPanZoom(svgRef.current, configuration.panZoomOptions);
 
         if (props.onPanZoomInit) {
-          console.debug("[onPanZoomInit] Fired");
+          logger("[onPanZoomInit] Fired");
           props.onPanZoomInit(panZoomInstance.current);
         }
       }
@@ -299,15 +301,17 @@ export const DAGSVGComponent = (props: {
       const node = dag.nodes?.filter((n) => n.node.id === dag.selectedNode)[0];
       if (node) {
         const sizes = panZoomInstance.current.getSizes();
+        const zoom = panZoomInstance.current.getZoom();
 
         const halfWidth = (sizes.viewBox.width / 2) + node.width / 2;
         const halfHeight = (sizes.viewBox.height / 2) - node.height / 2;
 
-        const x = -(node.x - halfWidth) * sizes.realZoom
-        const y = -(node.y - halfHeight) * sizes.realZoom;
-        //This doesn't work when you zoom!
-
+        const x = -(node.x - halfWidth);
+        const y = -(node.y - halfHeight);
+        // HACK - This should be do-able in one transition
+        panZoomInstance.current.zoomAtPoint(1,{ x, y })
         panZoomInstance.current.pan({ x, y });
+        panZoomInstance.current.zoom(zoom);
       }
     }
   }, [dag, configuration]);
@@ -351,7 +355,7 @@ export const DAGSVGComponent = (props: {
                 </ErrorBoundary>
               );
             } catch (e) {
-              console.warn("[renderEdge] Unable to render edge", edge, e);
+              logger("[renderEdge] Unable to render edge", edge, e);
             }
           })}
           {dag?.nodes?.map((node, idx) => {
@@ -367,7 +371,7 @@ export const DAGSVGComponent = (props: {
                 </ErrorBoundary>
               );
             } catch (e) {
-              console.warn("[renderNode] Unable to render node", node, e);
+              logger("[renderNode] Unable to render node", node, e);
             }
           })}
         </g>
