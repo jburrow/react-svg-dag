@@ -39,3 +39,15 @@ test("calculateDepths - diamond", () => {
   expect(result.depthToNodes[1].length).toBe(2);
   expect(result.depthToNodes[2].length).toBe(1);
 });
+
+test("calculateDepths - infinite loop", () => {
+  const result = calculateDepths([
+    { id: 1 },
+    { id: 2, parents: [1,2] },    
+  ]);
+
+  expect(result.edges.length).toBe(2);
+  expect(result.depth).toBe(2);
+  expect(result.depthToNodes[0].length).toBe(1);
+  expect(result.depthToNodes[1].length).toBe(1);  
+});

@@ -99,14 +99,17 @@ const calculateMaxDepth = (
   node: DAGNode,
   idToNode: Record<IdType, DAGNode>,
   idToParentIds: Record<IdType, number[]>,
-  depth: number
+  depth: number,
+  seenIds?: Record<IdType,boolean>,
 ) => {
   let resultDepth = depth;
-  if (node) {
+  seenIds = seenIds || {};
+  if (node && !seenIds[node.id]) {
+    seenIds[node.id]=true;
     const parents = idToParentIds[node.id];
     if (parents?.length > 0) {
-      for (const parent of parents) {
-        const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, idToParentIds, depth + 1);
+      for (const parent of parents) {        
+        const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, idToParentIds, depth + 1, seenIds);
         if (tmpDepth > resultDepth) {
           resultDepth = tmpDepth;
         }
