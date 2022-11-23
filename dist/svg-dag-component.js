@@ -60,13 +60,15 @@ const generateNodesAndEdges = (dagNodes, config) => {
     return { nodes, edges };
 };
 exports.generateNodesAndEdges = generateNodesAndEdges;
-const calculateMaxDepth = (node, idToNode, idToParentIds, depth) => {
+const calculateMaxDepth = (node, idToNode, idToParentIds, depth, seenIds) => {
     let resultDepth = depth;
-    if (node) {
+    seenIds = seenIds || {};
+    if (node && !seenIds[node.id]) {
+        seenIds[node.id] = true;
         const parents = idToParentIds[node.id];
         if ((parents === null || parents === void 0 ? void 0 : parents.length) > 0) {
             for (const parent of parents) {
-                const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, idToParentIds, depth + 1);
+                const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, idToParentIds, depth + 1, seenIds);
                 if (tmpDepth > resultDepth) {
                     resultDepth = tmpDepth;
                 }
