@@ -43,7 +43,7 @@
     "@webpack-cli/serve": "1.7.0",
     "babel-jest": "29.4.1",
     "concurrently": "7.6.0",
-    "cypress": "12.4.1",
+    "cypress": "12.5.0",
     "eslint": "8.33.0",
     "eslint-config-prettier": "8.6.0",
     "eslint-plugin-react": "7.32.2",
