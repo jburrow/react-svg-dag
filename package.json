@@ -44,7 +44,7 @@
     "babel-jest": "29.4.2",
     "concurrently": "7.6.0",
     "cypress": "12.5.1",
-    "eslint": "8.33.0",
+    "eslint": "8.34.0",
     "eslint-config-prettier": "8.6.0",
     "eslint-plugin-react": "7.32.2",
     "eslint-plugin-react-hooks": "4.6.0",
