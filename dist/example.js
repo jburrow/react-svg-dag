@@ -23,14 +23,15 @@ const ExampleApp = () => {
             React.createElement("div", null,
                 React.createElement("h3", null, "defaults"),
                 React.createElement(index_1.DAGSVGComponent, { nodes: nodes, style: { height: "500px", width: "500px", border: "1px solid black" }, onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id })),
-            React.createElement("div", null,
+            React.createElement("div", { style: { width: "100%" } },
                 React.createElement("h3", null, "With Config"),
-                React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "500px", width: "500px", border: "1px solid black" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
+                React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "500px", width: "100%", border: "1px solid black" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
                         edgePadding: 10,
                         height: 40,
                         horizontalGap: 10,
                         verticalGap: 10,
                         width: 40,
+                        autoCenterSelectedNode: false
                     }, onPanZoomInit: (c) => {
                         console.log("[onPanZoomInit]", c);
                     }, onSVG: (s) => {

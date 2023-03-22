@@ -1,5 +1,5 @@
 import * as React from "react";
-export declare type IdType = number;
+export type IdType = number;
 export interface DAGNode {
     title?: string;
     id: IdType;
@@ -35,11 +35,11 @@ export declare const calculateDepths: (nodes: DAGNode[]) => {
     depth: number;
     idToLeafCount: Record<number, number>;
 };
-export declare type DAGEdge = {
+export type DAGEdge = {
     from: IdType;
     to: IdType;
 };
-export declare const DAGSVGComponent: (props: {
+export declare const DAGSVGComponent: React.ForwardRefExoticComponent<{
     nodes: DAGNode[];
     configuration?: Configuration;
     onSVG?(element: any): void;
@@ -49,7 +49,7 @@ export declare const DAGSVGComponent: (props: {
     renderEdge?(edge: Edge, selected: boolean): JSX.Element;
     onClick?(node: Node): void;
     selectedNode?: IdType;
-}) => JSX.Element;
+} & React.RefAttributes<unknown>>;
 export interface Edge {
     to: Node;
     from: Node;
@@ -69,12 +69,12 @@ export interface NodeComponentProps {
     onClick?(node: Node): void;
     selected: boolean;
 }
-export declare const NodeComponent: (props: NodeComponentProps) => JSX.Element;
-export declare const EdgeComponent: (props: {
+export declare const NodeComponent: React.MemoExoticComponent<(props: NodeComponentProps) => JSX.Element>;
+export declare const EdgeComponent: React.MemoExoticComponent<(props: {
     from: Node;
     to: Node;
     key?: string;
     configuration: Configuration;
     selected: boolean;
-}) => JSX.Element;
+}) => JSX.Element>;
 export {};
