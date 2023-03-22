@@ -1,7 +1,8 @@
 import * as React from "react";
 import * as svgPanZoom from "svg-pan-zoom";
 import { ErrorBoundary } from "react-error-boundary";
-import * as debug from "debug";
+import debug from "debug";
+import ResizeObserver from "resize-observer-polyfill";
 
 const logger = debug("react-svg-dag");
 
@@ -267,7 +268,7 @@ const useResizeObserver = (callback: () => void, elementRef: React.MutableRefObj
 
 export type DAGEdge = { from: IdType; to: IdType };
 
-export const DAGSVGComponent = (props: {
+export const DAGSVGComponent = React.forwardRef((props: {
   nodes: DAGNode[];
   configuration?: Configuration;
   onSVG?(element: any): void;
@@ -277,11 +278,12 @@ export const DAGSVGComponent = (props: {
   renderEdge?(edge: Edge, selected: boolean): JSX.Element;
   onClick?(node: Node): void;
   selectedNode?: IdType;
-}) => {
+}, ref) => {
   const [configuration, setConfiguration] = React.useState<Configuration>();
   const [dag, setDag] = React.useState<GenerateNodesAndEdgesResult>(null);
   const svgRef = React.useRef<SVGSVGElement>();
   const htmlRef = React.useRef<HTMLDivElement>();
+  React.useImperativeHandle(ref, () => htmlRef.current);
   const panZoomInstance = React.useRef<SvgPanZoom.Instance>();
 
   React.useEffect(() => {
@@ -433,7 +435,8 @@ export const DAGSVGComponent = (props: {
       </div>
     )
   );
-};
+});
+DAGSVGComponent.displayName = "DAGSVGComponent";
 
 export interface Edge {
   to: Node;
@@ -457,14 +460,15 @@ export interface NodeComponentProps {
   selected: boolean;
 }
 
-export const NodeComponent = (props: NodeComponentProps): JSX.Element => {
+export const NodeComponent = React.memo((props: NodeComponentProps): JSX.Element => {
+  const onClick = React.useCallback((e: React.MouseEvent<SVGGElement, MouseEvent>): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    props.onClick && props.onClick(props.node);
+  }, [props.onClick]);
   return (
     <g
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        props.onClick && props.onClick(props.node);
-      }}
+      onClick={onClick}
     >
       <rect
         width={props.node.width}
@@ -485,9 +489,10 @@ export const NodeComponent = (props: NodeComponentProps): JSX.Element => {
       </text>
     </g>
   );
-};
+});
+NodeComponent.displayName = "NodeComponent";
 
-export const EdgeComponent = (props: {
+export const EdgeComponent = React.memo((props: {
   from: Node;
   to: Node;
   key?: string;
@@ -510,7 +515,8 @@ export const EdgeComponent = (props: {
       fill="transparent"
     />
   );
-};
+});
+EdgeComponent.displayName = "EdgeComponent";
 
 function sortEdges(edges: Edge[], selectedNode: number) {
   // We need to sort the edges so the selected edge can render on top of each other
