@@ -45,11 +45,9 @@ const ExampleApp = () => {
             style={{ height: "500px", width: "100%", border: "1px solid black" }}
             renderNode={(x) => <NodeComponent {...x} />}
             configuration={{
-              edgePadding: 10,
               height: 40,
-              horizontalGap: 10,
-              verticalGap: 10,
               width: 40,
+              dagreOptions: {nodesep: 10},
               autoCenterSelectedNode: false
             }}
             onPanZoomInit={(c) => {
@@ -78,15 +76,15 @@ const NodeComponent = (props: NodeComponentProps) => {
       <rect
         width={props.node.width}
         height={props.node.height}
-        x={props.node.x}
-        y={props.node.y}
+        x={props.node.x - props.node.width / 2}
+        y={props.node.y - props.node.height / 2}
         rx={5}
-        fill={props.selected ? "orange" : colors[props.node.depth] || "white"}
+        fill={props.selected ? "orange" :  "yellow"}
         stroke="black"
       />
       <text
-        x={props.node.x + props.node.width / 2}
-        y={props.node.y + props.node.height / 2}
+        x={props.node.x}
+        y={props.node.y}
         fontSize="10"
         textAnchor="middle"
         fill="black"
