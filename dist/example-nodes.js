@@ -31,7 +31,7 @@ exports.exampleDiamond = [
     },
     {
         id: 1,
-        parents: [null, 9999, "xxxx"],
+        parents: [], //[null, 9999, "xxxx" as unknown as number],
     },
     {
         id: 2,

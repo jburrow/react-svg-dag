@@ -26,11 +26,9 @@ const ExampleApp = () => {
             React.createElement("div", { style: { width: "100%" } },
                 React.createElement("h3", null, "With Config"),
                 React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "500px", width: "100%", border: "1px solid black" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
-                        edgePadding: 10,
                         height: 40,
-                        horizontalGap: 10,
-                        verticalGap: 10,
                         width: 40,
+                        dagreOptions: { nodesep: 10 },
                         autoCenterSelectedNode: false
                     }, onPanZoomInit: (c) => {
                         console.log("[onPanZoomInit]", c);
@@ -46,8 +44,8 @@ exports.renderExample = renderExample;
 const NodeComponent = (props) => {
     const colors = ["red", "purple", "green", "cyan", "pink", "silver", "gold"];
     return (React.createElement("g", { onClick: () => props.onClick(props.node) },
-        React.createElement("rect", { width: props.node.width, height: props.node.height, x: props.node.x, y: props.node.y, rx: 5, fill: props.selected ? "orange" : colors[props.node.depth] || "white", stroke: "black" }),
-        React.createElement("text", { x: props.node.x + props.node.width / 2, y: props.node.y + props.node.height / 2, fontSize: "10", textAnchor: "middle", fill: "black" }, props.node.node.title || props.node.node.id)));
+        React.createElement("rect", { width: props.node.width, height: props.node.height, x: props.node.x - props.node.width / 2, y: props.node.y - props.node.height / 2, rx: 5, fill: props.selected ? "orange" : "yellow", stroke: "black" }),
+        React.createElement("text", { x: props.node.x, y: props.node.y, fontSize: "10", textAnchor: "middle", fill: "black" }, props.node.node.title || props.node.node.id)));
 };
 (0, exports.renderExample)();
 //# sourceMappingURL=example.js.map

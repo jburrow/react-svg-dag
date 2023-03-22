@@ -1,21 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EdgeComponent = exports.NodeComponent = exports.DAGSVGComponent = exports.calculateDepths = exports.generateNodesAndEdges = exports.defaultConfiguration = void 0;
+exports.EdgeComponent = exports.NodeComponent = exports.DAGSVGComponent = exports.generateNodesAndEdges = exports.defaultConfiguration = void 0;
 const React = require("react");
 const svgPanZoom = require("svg-pan-zoom");
 const react_error_boundary_1 = require("react-error-boundary");
 const debug_1 = require("debug");
 const resize_observer_polyfill_1 = require("resize-observer-polyfill");
+const dagre = require("dagre");
 const logger = (0, debug_1.default)("react-svg-dag");
 exports.defaultConfiguration = {
-    width: 100,
-    height: 50,
-    horizontalGap: 25,
-    verticalGap: 50,
+    width: 250,
+    height: 40,
     enablePanZoom: true,
     edgePadding: 3,
     autoCenterSelectedNode: true,
-    autoSelectNode: true,
     panZoomOptions: {
         fit: true,
         minZoom: 0.25,
@@ -25,159 +23,46 @@ exports.defaultConfiguration = {
     },
 };
 const generateNodesAndEdges = (dagNodes, config) => {
-    var _a;
-    const r = (0, exports.calculateDepths)(dagNodes);
-    const nodes = [];
-    const idToNode = {};
-    for (let depth = r.depth - 1; depth > -1; depth--) {
-        const dagnodes = r.depthToNodes[depth] || [];
-        const initialRowOffset = r.maxNumberOfNodesInRow - dagnodes.length;
-        let idx = initialRowOffset ? initialRowOffset / 2 : 0;
-        for (const dagnode of dagnodes) {
-            const idxShift = (r.idToLeafCount[dagnode.id] || 1) / 2;
-            idx += idxShift;
-            const parents = r.idToParentIds[dagnode.id];
-            const index = (parents === null || parents === void 0 ? void 0 : parents.length) > 0 && ((_a = r.parentToIds[parents[0]]) === null || _a === void 0 ? void 0 : _a.length) > 0
-                ? r.parentToIds[parents[0]].indexOf(dagnode.id)
-                : 0;
-            const n = {
-                depth,
-                height: config.height,
-                width: config.width,
-                x: (config.width + config.horizontalGap) * idx,
-                y: (config.height + config.verticalGap) * depth,
-                node: dagnode,
-                index,
-            };
-            nodes.push(n);
-            idToNode[dagnode.id] = n;
-            idx += idxShift;
+    var _a, _b, _c, _d, _e;
+    const g = new dagre.graphlib.Graph({ directed: true });
+    const nodes = new Map();
+    g.setGraph((_a = config.dagreOptions) !== null && _a !== void 0 ? _a : {});
+    g.setDefaultEdgeLabel(() => { return {}; });
+    for (const n of dagNodes) {
+        if (nodes.has(n.id))
+            throw new Error(`duplicate node ${n.id}`);
+        g.setNode(n.id.toString(), { label: (_b = n.title) !== null && _b !== void 0 ? _b : "", width: (_c = n.width) !== null && _c !== void 0 ? _c : config.width, height: (_d = n.height) !== null && _d !== void 0 ? _d : config.height });
+        nodes.set(n.id, n);
+    }
+    for (const n of dagNodes) {
+        for (const p of (_e = n.parents) !== null && _e !== void 0 ? _e : []) {
+            g.setEdge({ v: p.toString(), w: n.id.toString() });
         }
     }
-    const edges = [];
-    for (const edge of r.edges) {
-        edges.push({ from: idToNode[edge[0].id], to: idToNode[edge[1].id] });
-    }
-    return { nodes, edges };
-};
-exports.generateNodesAndEdges = generateNodesAndEdges;
-const calculateMaxDepth = (node, idToNode, idToParentIds, depth, seenIds) => {
-    let resultDepth = depth;
-    seenIds = seenIds || {};
-    if (node && !seenIds[node.id]) {
-        seenIds[node.id] = true;
-        const parents = idToParentIds[node.id];
-        if ((parents === null || parents === void 0 ? void 0 : parents.length) > 0) {
-            for (const parent of parents) {
-                const tmpDepth = calculateMaxDepth(idToNode[parent], idToNode, idToParentIds, depth + 1, seenIds);
-                if (tmpDepth > resultDepth) {
-                    resultDepth = tmpDepth;
-                }
-            }
-        }
-    }
-    return resultDepth;
-};
-const calculateDepths = (nodes) => {
-    var _a;
-    const idToNode = {};
-    const idToDepth = {};
-    const idToLeafCount = {};
-    const idToDepthIndex = {};
-    const idToParentIds = {};
-    const depthToNodes = {};
-    const parentToIds = {};
-    const edges = [];
-    let maxDepth = 0;
-    for (const node of nodes) {
-        idToNode[node.id] = node;
-        if (Array.isArray(node.parents)) {
-            //TODO : Do we want a type filter?
-            idToParentIds[node.id] = ((_a = node.parents) === null || _a === void 0 ? void 0 : _a.filter((p) => p != null && p !== undefined && typeof p === "number")) || [];
-        }
-        else {
-            idToParentIds[node.id] = [];
-        }
-    }
-    for (const node of nodes) {
-        const afterFilter = idToParentIds[node.id].filter((p) => idToNode[p]);
-        if (afterFilter.length !== idToParentIds[node.id].length) {
-            logger(`[discarded-invalid-parents] ${node.id} had invalid parent-ids filtered ${idToParentIds[node.id]} => ${afterFilter}`);
-            idToParentIds[node.id] = afterFilter;
-        }
-    }
-    for (const node of nodes) {
-        const depth = calculateMaxDepth(node, idToNode, idToParentIds, 0);
-        for (let d = 0; d < depth + 1; d++) {
-            if (depthToNodes[d] === undefined) {
-                depthToNodes[d] = [];
-            }
-        }
-        idToLeafCount[node.id] = 0;
-        idToDepth[node.id] = depth;
-        depthToNodes[depth].push(node);
-        idToDepthIndex[node.id] = depthToNodes[depth].length;
-        if (depth > maxDepth) {
-            maxDepth = depth;
-        }
-        for (const parent of idToParentIds[node.id]) {
-            if (idToNode[parent]) {
-                edges.push([node, idToNode[parent]]);
-            }
-            else {
-                logger("[define-edge] Unable to find a node ", parent, "Known nodes:", Object.keys(idToNode));
-            }
-        }
-    }
-    let maxNumberOfNodesInRow = 0;
-    if (nodes.length) {
-        for (let depth = maxDepth; depth > -1; depth--) {
-            for (const node of depthToNodes[depth]) {
-                idToParentIds[node.id]
-                    .filter((p) => idToDepth[p] === p[node.id] - 1)
-                    .map((parent) => {
-                    idToLeafCount[parent] += depth === maxDepth ? 1 : idToLeafCount[node.id];
-                });
-            }
-            if (depthToNodes[depth].length > maxNumberOfNodesInRow) {
-                maxNumberOfNodesInRow = depthToNodes[depth].length;
-            }
-            if (depth > 0) {
-                depthToNodes[depth].sort((a, b) => {
-                    try {
-                        const ap = idToParentIds[a.id].length ? idToParentIds[a.id][0] : 0;
-                        const bp = idToParentIds[b.id].length ? idToParentIds[b.id][0] : 0;
-                        return ap - bp || a.id - b.id;
-                    }
-                    catch (_a) {
-                        return 0;
-                    }
-                });
-            }
-        }
-    }
-    for (const node of nodes) {
-        for (const parentId of idToParentIds[node.id]) {
-            if (!parentToIds[parentId]) {
-                parentToIds[parentId] = [];
-            }
-            parentToIds[parentId].push(node.id);
-        }
-    }
+    dagre.layout(g, {}); //{width: config.width, height: config.height});
     return {
-        parentToIds,
-        maxNumberOfNodesInRow,
-        idToNode,
-        idToDepth,
-        edges,
-        idToDepthIndex,
-        idToParentIds,
-        depthToNodes,
-        depth: maxDepth + 1,
-        idToLeafCount,
+        nodes: g.nodes().map((n_id, i) => {
+            const n = g.node(n_id);
+            return {
+                width: n.width,
+                height: n.height,
+                x: n.x,
+                y: n.y,
+                index: i,
+                node: nodes.get(parseInt(n_id, 10))
+            };
+        }),
+        edges: g.edges().map((e_id) => {
+            const { points } = g.edge(e_id);
+            return {
+                points,
+                from: nodes.get(parseInt(e_id.v, 10)),
+                to: nodes.get(parseInt(e_id.w, 10)),
+            };
+        })
     };
 };
-exports.calculateDepths = calculateDepths;
+exports.generateNodesAndEdges = generateNodesAndEdges;
 const useResizeObserver = (callback, elementRef) => {
     // https://eymas.medium.com/react-hooks-useobserve-use-resizeobserver-custom-hook-45ec95ad9844
     const current = elementRef && elementRef.current;
@@ -205,43 +90,19 @@ const useResizeObserver = (callback, elementRef) => {
 };
 exports.DAGSVGComponent = React.forwardRef((props, ref) => {
     var _a, _b;
-    const [configuration, setConfiguration] = React.useState();
-    const [dag, setDag] = React.useState(null);
+    const [selectedNodeId, setSelectedNodeId] = React.useState();
+    const configuration = React.useMemo(() => {
+        var _a;
+        return Object.assign(Object.assign({}, exports.defaultConfiguration), ((_a = props.configuration) !== null && _a !== void 0 ? _a : {}));
+    }, [props.nodes, props.configuration]);
+    const dag = React.useMemo(() => {
+        var _a;
+        return (0, exports.generateNodesAndEdges)((_a = props.nodes) !== null && _a !== void 0 ? _a : [], configuration);
+    }, [props.nodes, configuration]);
     const svgRef = React.useRef();
     const htmlRef = React.useRef();
     React.useImperativeHandle(ref, () => htmlRef.current);
     const panZoomInstance = React.useRef();
-    React.useEffect(() => {
-        const cleanPropConfig = Object.fromEntries(Object.entries(props.configuration || {}).filter(([_key, value]) => value !== undefined && value !== null));
-        const c = Object.assign(Object.assign({}, exports.defaultConfiguration), cleanPropConfig);
-        if (JSON.stringify(c) !== JSON.stringify(configuration)) {
-            logger("[configuration] Merging prop.configuration + updating", cleanPropConfig, "merged config:", c);
-            setConfiguration(c);
-        }
-    }, [props.configuration, configuration]);
-    const setSelectedNodeAndSortEdges = React.useCallback((sn) => {
-        setDag((dag_) => {
-            return Object.assign(Object.assign({}, dag_), { edges: sortEdges(dag_.edges, sn), selectedNode: sn });
-        });
-    }, []);
-    React.useEffect(() => {
-        if (dag) {
-            if (dag.selectedNode == null && configuration.autoSelectNode && dag.nodes.length) {
-                logger("[selectedNode] defaulting to first", dag.selectedNode);
-                setSelectedNodeAndSortEdges(dag.nodes[dag.nodes.length - 1].node.id);
-            }
-            else if (props.selectedNode && dag.selectedNode !== props.selectedNode) {
-                logger("[selectedNode] prop changed", props.selectedNode, dag === null || dag === void 0 ? void 0 : dag.selectedNode);
-                setSelectedNodeAndSortEdges(props.selectedNode);
-            }
-        }
-    }, [setSelectedNodeAndSortEdges, props.selectedNode, dag, configuration]);
-    React.useEffect(() => {
-        if (configuration) {
-            logger("[calculate-dag]");
-            setDag((0, exports.generateNodesAndEdges)(props.nodes, configuration));
-        }
-    }, [props.nodes, configuration]);
     const handleSvgRef = React.useCallback((elem) => {
         svgRef.current = elem;
         if (svgRef.current && configuration.enablePanZoom && !panZoomInstance.current) {
@@ -254,8 +115,8 @@ exports.DAGSVGComponent = React.forwardRef((props, ref) => {
     }, [configuration, panZoomInstance]);
     React.useEffect(() => {
         var _a;
-        if ((dag === null || dag === void 0 ? void 0 : dag.selectedNode) && panZoomInstance.current && configuration.autoCenterSelectedNode) {
-            const node = (_a = dag.nodes) === null || _a === void 0 ? void 0 : _a.filter((n) => n.node.id === dag.selectedNode)[0];
+        if (selectedNodeId && panZoomInstance.current && configuration.autoCenterSelectedNode) {
+            const node = (_a = dag.nodes) === null || _a === void 0 ? void 0 : _a.filter((n) => n.node.id === selectedNodeId)[0];
             if (node) {
                 const sizes = panZoomInstance.current.getSizes();
                 const zoom = panZoomInstance.current.getZoom();
@@ -274,10 +135,16 @@ exports.DAGSVGComponent = React.forwardRef((props, ref) => {
         if (props.onClick) {
             props.onClick(node);
         }
-        setSelectedNodeAndSortEdges(node.node.id);
-    }, [setSelectedNodeAndSortEdges, props.onClick]);
+        setSelectedNodeId(node.node.id);
+    }, [setSelectedNodeId, props.onClick]);
     const defaultRenderNode = React.useCallback((node) => React.createElement(exports.NodeComponent, Object.assign({}, node)), []);
-    const defaultRenderEdge = React.useCallback((edge) => (React.createElement(exports.EdgeComponent, { from: edge.from, to: edge.to, key: `${edge.from.node.id}-${edge.to.node.id}`, configuration: configuration, selected: dag.selectedNode === edge.from.node.id || dag.selectedNode === edge.to.node.id })), [configuration, dag === null || dag === void 0 ? void 0 : dag.selectedNode]);
+    const defaultRenderEdge = React.useCallback((edge) => (React.createElement(exports.EdgeComponent
+    // from={edge.from}
+    // to={edge.to}
+    , { 
+        // from={edge.from}
+        // to={edge.to}
+        points: edge.points, key: `edge-${edge.from}-${edge.to}`, configuration: configuration, selected: selectedNodeId === edge.from.id || selectedNodeId === edge.to.id })), [configuration, selectedNodeId]);
     const onResize = React.useCallback(() => {
         if (panZoomInstance.current) {
             panZoomInstance.current.resize();
@@ -285,7 +152,6 @@ exports.DAGSVGComponent = React.forwardRef((props, ref) => {
             panZoomInstance.current.center();
         }
     }, []);
-    //useResizeObserver(svgRef, onResize);
     useResizeObserver(onResize, htmlRef);
     const renderNode = props.renderNode ? props.renderNode : defaultRenderNode;
     const renderEdge = props.renderEdge ? props.renderEdge : defaultRenderEdge;
@@ -294,7 +160,7 @@ exports.DAGSVGComponent = React.forwardRef((props, ref) => {
             React.createElement("g", null, (_a = dag === null || dag === void 0 ? void 0 : dag.edges) === null || _a === void 0 ? void 0 :
                 _a.map((edge, idx) => {
                     try {
-                        return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderEdge(edge, edge.from.node.id === dag.selectedNode || edge.to.node.id === dag.selectedNode)));
+                        return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderEdge(edge, edge.from.id === selectedNodeId || edge.to.id === selectedNodeId)));
                     }
                     catch (e) {
                         logger("[renderEdge] Unable to render edge", edge, e);
@@ -305,7 +171,7 @@ exports.DAGSVGComponent = React.forwardRef((props, ref) => {
                         return (React.createElement(react_error_boundary_1.ErrorBoundary, { key: idx, fallbackRender: () => null }, renderNode({
                             node,
                             onClick: handleClick,
-                            selected: node.node.id === dag.selectedNode,
+                            selected: node.node.id === selectedNodeId,
                             key: `${node.node.id}`,
                         })));
                     }
@@ -322,35 +188,25 @@ exports.NodeComponent = React.memo((props) => {
         props.onClick && props.onClick(props.node);
     }, [props.onClick]);
     return (React.createElement("g", { onClick: onClick },
-        React.createElement("rect", { width: props.node.width, height: props.node.height, x: props.node.x, y: props.node.y, fill: props.selected ? "orange" : "white", stroke: props.selected ? "red" : "black" }),
-        React.createElement("text", { x: props.node.x + props.node.width / 2, y: props.node.y + props.node.height / 2, fontSize: "10", textAnchor: "middle", fill: "black" }, props.node.node.title || props.node.node.id)));
+        React.createElement("rect", { width: props.node.width, height: props.node.height, x: props.node.x - props.node.width / 2, y: props.node.y - props.node.height / 2, fill: props.selected ? "orange" : "white", stroke: props.selected ? "red" : "black" }),
+        React.createElement("text", { x: props.node.x, y: props.node.y, fontSize: "10", textAnchor: "middle", fill: "black" }, props.node.node.title || props.node.node.id)));
 });
 exports.NodeComponent.displayName = "NodeComponent";
 exports.EdgeComponent = React.memo((props) => {
-    const isAbove = props.from.y > props.to.y;
-    const from_x = props.from.x + props.from.width / 2;
-    const from_y = props.from.y + (isAbove ? 0 : props.from.height);
-    const to_x = props.to.x + props.to.width / 2;
-    const to_y = props.to.y + (isAbove ? props.to.height : 0);
-    const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * props.configuration.edgePadding;
-    return (React.createElement("path", { d: `M ${from_x} ${from_y} V ${from_y - mid_y}  H ${to_x} L ${to_x} ${to_y}`, stroke: props.selected ? "red" : "black", fill: "transparent" }));
+    // const isAbove = props.from.y > props.to.y;
+    // const from_x = props.from.x + props.from.width / 2;
+    // const from_y = props.from.y + (isAbove ? 0 : props.from.height);
+    // const to_x = props.to.x + props.to.width / 2;
+    // const to_y = props.to.y + (isAbove ? props.to.height : 0);
+    // const mid_y = Math.abs(to_y - from_y) / 2 + props.from.index * props.configuration.edgePadding;
+    const d = props.points.map((p, i) => {
+        // https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
+        if (i == 0) {
+            return `M ${p.x} ${p.y}`;
+        }
+        return `L ${p.x} ${p.y}`;
+    }).join(" ");
+    return (React.createElement("path", { d: d, stroke: props.selected ? "red" : "black", fill: "transparent" }));
 });
 exports.EdgeComponent.displayName = "EdgeComponent";
-function sortEdges(edges, selectedNode) {
-    // We need to sort the edges so the selected edge can render on top of each other
-    if (selectedNode) {
-        const other = [];
-        const last = [];
-        for (const e of edges) {
-            if (e.from.node.id === selectedNode || e.to.node.id === selectedNode) {
-                last.push(e);
-            }
-            else {
-                other.push(e);
-            }
-        }
-        return other.concat(last);
-    }
-    return edges;
-}
 //# sourceMappingURL=svg-dag-component.js.map

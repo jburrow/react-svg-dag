@@ -1,43 +1,35 @@
 import * as React from "react";
-export type IdType = number;
+import * as dagre from "dagre";
+export type NodeIdType = number;
 export interface DAGNode {
     title?: string;
-    id: IdType;
-    parents?: IdType[];
+    id: NodeIdType;
+    parents?: NodeIdType[];
+    width?: number;
+    height?: number;
 }
 export interface Configuration {
+    /** Default node width */
     width?: number;
+    /** Default node height */
     height?: number;
     horizontalGap?: number;
     verticalGap?: number;
     enablePanZoom?: boolean;
     edgePadding?: number;
+    dagreOptions?: dagre.GraphLabel;
     panZoomOptions?: SvgPanZoom.Options;
     autoCenterSelectedNode?: boolean;
-    autoSelectNode?: boolean;
 }
 export declare const defaultConfiguration: Configuration;
 interface GenerateNodesAndEdgesResult {
     nodes: Node[];
     edges: Edge[];
-    selectedNode?: number;
 }
 export declare const generateNodesAndEdges: (dagNodes: DAGNode[], config: Configuration) => GenerateNodesAndEdgesResult;
-export declare const calculateDepths: (nodes: DAGNode[]) => {
-    parentToIds: Record<number, number[]>;
-    maxNumberOfNodesInRow: number;
-    idToNode: Record<number, DAGNode>;
-    idToDepth: Record<number, number>;
-    edges: [DAGNode, DAGNode][];
-    idToDepthIndex: Record<number, number>;
-    idToParentIds: Record<number, number[]>;
-    depthToNodes: Record<number, DAGNode[]>;
-    depth: number;
-    idToLeafCount: Record<number, number>;
-};
 export type DAGEdge = {
-    from: IdType;
-    to: IdType;
+    from: NodeIdType;
+    to: NodeIdType;
 };
 export declare const DAGSVGComponent: React.ForwardRefExoticComponent<{
     nodes: DAGNode[];
@@ -48,19 +40,21 @@ export declare const DAGSVGComponent: React.ForwardRefExoticComponent<{
     renderNode?(props: NodeComponentProps): JSX.Element;
     renderEdge?(edge: Edge, selected: boolean): JSX.Element;
     onClick?(node: Node): void;
-    selectedNode?: IdType;
+    selectedNode?: NodeIdType;
 } & React.RefAttributes<unknown>>;
 export interface Edge {
-    to: Node;
-    from: Node;
+    points: {
+        x: number;
+        y: number;
+    }[];
+    from: DAGNode;
+    to: DAGNode;
 }
 export interface Node {
     x: number;
     y: number;
     width: number;
     height: number;
-    depth: number;
-    index: number;
     node: DAGNode;
 }
 export interface NodeComponentProps {
@@ -71,8 +65,10 @@ export interface NodeComponentProps {
 }
 export declare const NodeComponent: React.MemoExoticComponent<(props: NodeComponentProps) => JSX.Element>;
 export declare const EdgeComponent: React.MemoExoticComponent<(props: {
-    from: Node;
-    to: Node;
+    points: {
+        x: number;
+        y: number;
+    }[];
     key?: string;
     configuration: Configuration;
     selected: boolean;
