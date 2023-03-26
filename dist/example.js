@@ -26,6 +26,10 @@ const ExampleApp = () => {
             React.createElement("div", { style: { width: "100%" } },
                 React.createElement("h3", null, "With Config"),
                 React.createElement(index_1.DAGSVGComponent, { onClick: setSelectedNode, selectedNode: selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.node.id, nodes: nodes, style: { height: "500px", width: "100%", border: "1px solid black" }, renderNode: (x) => React.createElement(NodeComponent, Object.assign({}, x)), configuration: {
+<<<<<<< HEAD
+=======
+                        edgePadding: 10,
+>>>>>>> main
                         height: 40,
                         width: 40,
                         dagreOptions: { nodesep: 10 },

@@ -1,6 +1,10 @@
 import * as React from "react";
+<<<<<<< HEAD
 import * as dagre from "dagre";
 export type NodeIdType = number;
+=======
+export type IdType = number;
+>>>>>>> main
 export interface DAGNode {
     title?: string;
     id: NodeIdType;
@@ -31,7 +35,15 @@ export type DAGEdge = {
     from: NodeIdType;
     to: NodeIdType;
 };
+<<<<<<< HEAD
 export declare const DAGSVGComponent: React.ForwardRefExoticComponent<{
+=======
+export type DAGEdge = {
+    from: IdType;
+    to: IdType;
+};
+export declare const DAGSVGComponent: (props: {
+>>>>>>> main
     nodes: DAGNode[];
     configuration?: Configuration;
     onSVG?(element: any): void;
