@@ -1,5 +1,5 @@
 import * as React from "react";
-export declare type IdType = number;
+export type IdType = number;
 export interface DAGNode {
     title?: string;
     id: IdType;
@@ -35,7 +35,7 @@ export declare const calculateDepths: (nodes: DAGNode[]) => {
     depth: number;
     idToLeafCount: Record<number, number>;
 };
-export declare type DAGEdge = {
+export type DAGEdge = {
     from: IdType;
     to: IdType;
 };
