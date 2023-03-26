@@ -35,7 +35,7 @@ export const exampleDiamond: DAGNode[] = [
   },
   {
     id: 1,
-    parents: [null, 9999, "xxxx" as unknown as number],
+    parents: [], //[null, 9999, "xxxx" as unknown as number],
   },
   {
     id: 2,
