@@ -36,13 +36,13 @@ const ExampleApp = () => {
             selectedNode={selectedNode?.node.id}
           />
         </div>
-        <div>
+        <div style={{width: "100%"}}>
           <h3>With Config</h3>
           <DAGSVGComponent
             onClick={setSelectedNode}
             selectedNode={selectedNode?.node.id}
             nodes={nodes}
-            style={{ height: "500px", width: "500px", border: "1px solid black" }}
+            style={{ height: "500px", width: "100%", border: "1px solid black" }}
             renderNode={(x) => <NodeComponent {...x} />}
             configuration={{
               edgePadding: 10,
