@@ -36,7 +36,7 @@
     "svg-pan-zoom": "^3.6.1"
   },
   "devDependencies": {
-    "@babel/preset-env": "7.22.6",
+    "@babel/preset-env": "7.22.7",
     "@babel/preset-react": "7.22.5",
     "@babel/preset-typescript": "^7.21.0",
     "@babel/runtime": "7.22.6",
