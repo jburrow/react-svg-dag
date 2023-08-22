@@ -49,7 +49,7 @@
     "@typescript-eslint/parser": "6.4.1",
     "@webpack-cli/serve": "1.7.0",
     "babel-jest": "29.6.3",
-    "concurrently": "8.2.0",
+    "concurrently": "8.2.1",
     "cypress": "11.2.0",
     "eslint": "8.47.0",
     "eslint-config-prettier": "9.0.0",
