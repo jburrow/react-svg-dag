@@ -40,7 +40,7 @@
     "@babel/preset-react": "7.22.15",
     "@babel/preset-typescript": "^7.21.0",
     "@babel/runtime": "7.22.15",
-    "@babel/types": "7.22.15",
+    "@babel/types": "7.22.17",
     "@types/dagre": "^0.7.47",
     "@types/debug": "^4.1.7",
     "@types/jest": "29.5.4",
