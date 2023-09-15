@@ -43,7 +43,7 @@
     "@babel/types": "7.22.19",
     "@types/dagre": "^0.7.47",
     "@types/debug": "^4.1.7",
-    "@types/jest": "29.5.4",
+    "@types/jest": "29.5.5",
     "@types/react": "18.2.21",
     "@typescript-eslint/eslint-plugin": "6.7.0",
     "@typescript-eslint/parser": "6.7.0",
