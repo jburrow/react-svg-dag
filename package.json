@@ -50,7 +50,7 @@
     "@webpack-cli/serve": "1.7.0",
     "babel-jest": "29.7.0",
     "concurrently": "8.2.1",
-    "cypress": "13.3.0",
+    "cypress": "13.3.1",
     "eslint": "8.51.0",
     "eslint-config-prettier": "9.0.0",
     "eslint-plugin-react": "7.33.2",
