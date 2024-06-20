@@ -124,6 +124,8 @@ const useResizeObserver = (callback: () => void, elementRef: React.MutableRefObj
 };
 
 export type DAGEdge = { from: NodeIdType; to: NodeIdType };
+  
+const DIV_STYLE = {width: "100%", height: "100%"};
 
 export const DAGSVGComponent = React.forwardRef((props: {
   nodes: DAGNode[];
@@ -226,7 +228,7 @@ export const DAGSVGComponent = React.forwardRef((props: {
 
   return (
     dag && (
-      <div ref={htmlRef}>
+      <div ref={htmlRef} style={DIV_STYLE}>
       <svg version="1.1" ref={handleSvgRef} style={props.style || {}}>
         <g>
           {dag?.edges?.map((edge, idx) => {
