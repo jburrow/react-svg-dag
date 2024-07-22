@@ -31,7 +31,7 @@
     "dagre": "^0.8.5",
     "debug": "^4.3.4",
     "patch-package": "^6.5.1",
-    "react-error-boundary": "^3.1.4",
+    "react-error-boundary": "^4.0.0",
     "resize-observer-polyfill": "^1.5.1",
     "svg-pan-zoom": "^3.6.1"
   },
