@@ -27,7 +27,7 @@
     "react-dom": "^16.* || ^17.* || ^18.*"
   },
   "dependencies": {
-    "@react-hook/resize-observer": "^1.2.6",
+    "@react-hook/resize-observer": "^2.0.0",
     "dagre": "^0.8.5",
     "debug": "^4.3.4",
     "patch-package": "^6.5.1",
